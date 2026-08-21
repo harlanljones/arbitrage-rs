@@ -1,0 +1,19 @@
+[package]
+name = "arbkit-core"
+description = "Odds arithmetic, order books, and cross-venue arbitrage detection in pure Rust"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+# NOTE: this crate must never depend on tokio, a HTTP or WebSocket client, or
+# anything else doing I/O. It is the domain core: `cargo test -p arbkit-core`
+# runs offline, in milliseconds, with no network and no credentials. Keep this
+# dependency list tiny — every crate added here is a crate the hot path has to
+# justify.
+[dependencies]
+thiserror.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true

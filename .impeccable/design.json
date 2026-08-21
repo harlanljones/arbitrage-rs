@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-21T19:54:08Z",
+  "title": "Design System: arbkit Results Ledger",
+  "extensions": {
+    "colorMeta": {
+      "paper": { "role": "neutral", "displayName": "Warm Ledger Paper", "canonical": "#f3efe5", "tonalRamp": ["oklch(15% 0.014 88.7)", "oklch(27% 0.014 88.7)", "oklch(39% 0.014 88.7)", "oklch(51% 0.014 88.7)", "oklch(63% 0.014 88.7)", "oklch(75% 0.014 88.7)", "oklch(87% 0.014 88.7)", "oklch(95% 0.014 88.7)"] },
+      "paper-deep": { "role": "neutral", "displayName": "Pressed Paper", "canonical": "#e7dfcf", "tonalRamp": ["oklch(15% 0.023 84.6)", "oklch(27% 0.023 84.6)", "oklch(39% 0.023 84.6)", "oklch(51% 0.023 84.6)", "oklch(63% 0.023 84.6)", "oklch(75% 0.023 84.6)", "oklch(87% 0.023 84.6)", "oklch(95% 0.023 84.6)"] },
+      "ink": { "role": "neutral", "displayName": "Carbon Ink", "canonical": "#171814", "tonalRamp": ["oklch(15% 0.008 118.5)", "oklch(27% 0.008 118.5)", "oklch(39% 0.008 118.5)", "oklch(51% 0.008 118.5)", "oklch(63% 0.008 118.5)", "oklch(75% 0.008 118.5)", "oklch(87% 0.008 118.5)", "oklch(95% 0.008 118.5)"] },
+      "muted-ink": { "role": "neutral", "displayName": "Soft Carbon", "canonical": "#5d5b52", "tonalRamp": ["oklch(15% 0.014 96.6)", "oklch(27% 0.014 96.6)", "oklch(39% 0.014 96.6)", "oklch(51% 0.014 96.6)", "oklch(63% 0.014 96.6)", "oklch(75% 0.014 96.6)", "oklch(87% 0.014 96.6)", "oklch(95% 0.014 96.6)"] },
+      "audit-rule": { "role": "neutral", "displayName": "Audit Rule", "canonical": "#aaa291", "tonalRamp": ["oklch(15% 0.026 85.8)", "oklch(27% 0.026 85.8)", "oklch(39% 0.026 85.8)", "oklch(51% 0.026 85.8)", "oklch(63% 0.026 85.8)", "oklch(75% 0.026 85.8)", "oklch(87% 0.026 85.8)", "oklch(95% 0.026 85.8)"] },
+      "soft-rule": { "role": "neutral", "displayName": "Soft Rule", "canonical": "#d7d0c0", "tonalRamp": ["oklch(15% 0.023 87.2)", "oklch(27% 0.023 87.2)", "oklch(39% 0.023 87.2)", "oklch(51% 0.023 87.2)", "oklch(63% 0.023 87.2)", "oklch(75% 0.023 87.2)", "oklch(87% 0.023 87.2)", "oklch(95% 0.023 87.2)"] },
+      "verification": { "role": "primary", "displayName": "Verification Green", "canonical": "#2f6d43", "tonalRamp": ["oklch(15% 0.093 151.9)", "oklch(27% 0.093 151.9)", "oklch(39% 0.093 151.9)", "oklch(51% 0.093 151.9)", "oklch(63% 0.093 151.9)", "oklch(75% 0.093 151.9)", "oklch(87% 0.093 151.9)", "oklch(95% 0.093 151.9)"] },
+      "verification-soft": { "role": "primary", "displayName": "Verification Wash", "canonical": "#dbe7d9", "tonalRamp": ["oklch(15% 0.023 141.2)", "oklch(27% 0.023 141.2)", "oklch(39% 0.023 141.2)", "oklch(51% 0.023 141.2)", "oklch(63% 0.023 141.2)", "oklch(75% 0.023 141.2)", "oklch(87% 0.023 141.2)", "oklch(95% 0.023 141.2)"] },
+      "loss-budget": { "role": "tertiary", "displayName": "Loss & Budget Copper", "canonical": "#9a4d2f", "tonalRamp": ["oklch(15% 0.112 41.3)", "oklch(27% 0.112 41.3)", "oklch(39% 0.112 41.3)", "oklch(51% 0.112 41.3)", "oklch(63% 0.112 41.3)", "oklch(75% 0.112 41.3)", "oklch(87% 0.112 41.3)", "oklch(95% 0.112 41.3)"] },
+      "comparison": { "role": "secondary", "displayName": "Comparison Blue", "canonical": "#315a78", "tonalRamp": ["oklch(15% 0.068 242.1)", "oklch(27% 0.068 242.1)", "oklch(39% 0.068 242.1)", "oklch(51% 0.068 242.1)", "oklch(63% 0.068 242.1)", "oklch(75% 0.068 242.1)", "oklch(87% 0.068 242.1)", "oklch(95% 0.068 242.1)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Primary Measurement", "purpose": "The single dominant p99 value in the first viewport." },
+      "headline": { "displayName": "Evidence Headline", "purpose": "Major section claims and state-page headings." },
+      "title": { "displayName": "Ledger Figure", "purpose": "Evidence-rail values and supporting measurements." },
+      "body": { "displayName": "Method Copy", "purpose": "Explanations, limitations, and comparison context." },
+      "label": { "displayName": "Audit Label", "purpose": "Uppercase field names, units, and table headings." },
+      "data": { "displayName": "Operational Data", "purpose": "Controls, metadata, tables, and chart annotations." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "navigation-underline", "value": "transform 180ms ease-out", "purpose": "Draws the desktop navigation rule from left to right on hover and focus." },
+      { "name": "evidence-scan", "value": "1.2s cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Runs once on the loading-state evidence rule; reduced motion collapses it to 0.01ms." }
+    ],
+    "breakpoints": [
+      { "name": "ledger-compact", "value": "1100px" },
+      { "name": "ledger-mobile", "value": "760px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Ledger Button",
+      "kind": "button",
+      "refersTo": "button-ledger",
+      "description": "Square bordered action for downloads and retry states.",
+      "html": "<button class=\"ds-ledger-button\" type=\"button\">Download selected JSON</button>",
+      "css": ".ds-ledger-button { border: 1px solid var(--ink); border-radius: 0; color: var(--ink); background: var(--paper); padding: 13px 18px; font: 400 0.76rem/1.5 var(--mono); cursor: pointer; } .ds-ledger-button:hover, .ds-ledger-button:active { color: var(--paper); background: var(--ink); } .ds-ledger-button:focus-visible { outline: 3px solid var(--copper); outline-offset: 4px; }"
+    },
+    {
+      "name": "Published Run Field",
+      "kind": "input",
+      "refersTo": "select-run",
+      "description": "Native dated-run selector that keeps environment context visible.",
+      "html": "<label class=\"ds-run-label\" for=\"ds-run-select\">Published run</label><select class=\"ds-run-select\" id=\"ds-run-select\"><option>Aug 21, 2026 · Current Linux run</option><option>Aug 19, 2026 · Apple Silicon baseline</option></select>",
+      "css": ".ds-run-label { margin-right: 18px; color: var(--ink); font: 400 0.7rem/1 var(--mono); text-transform: uppercase; letter-spacing: 0.12em; } .ds-run-select { min-width: 290px; padding: 12px 38px 12px 14px; border: 1px solid var(--ink); border-radius: 0; color: var(--ink); background: var(--paper); font: 400 0.76rem/1.5 var(--mono); } .ds-run-select:focus-visible { outline: 3px solid var(--copper); outline-offset: 4px; }"
+    },
+    {
+      "name": "Section Navigation",
+      "kind": "nav",
+      "description": "Quiet desktop anchors with a ruled hover and focus state.",
+      "html": "<nav class=\"ds-ledger-nav\" aria-label=\"Results sections\"><a href=\"#performance\">Performance</a><a href=\"#execution\">Execution</a><a href=\"#verification\">Verification</a><a href=\"#history\">History</a></nav>",
+      "css": ".ds-ledger-nav { display: flex; gap: 28px; color: var(--ink); font: 400 0.72rem/1 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; } .ds-ledger-nav a { color: inherit; text-decoration: none; } .ds-ledger-nav a::after { display: block; width: 100%; height: 1px; margin-top: 6px; background: currentColor; content: \"\"; transform: scaleX(0); transform-origin: left; transition: transform 180ms ease-out; } .ds-ledger-nav a:hover { color: var(--green); } .ds-ledger-nav a:hover::after, .ds-ledger-nav a:focus-visible::after { transform: scaleX(1); } .ds-ledger-nav a:focus-visible { outline: 3px solid var(--copper); outline-offset: 4px; }"
+    },
+    {
+      "name": "Evidence Rail Fact",
+      "kind": "card",
+      "description": "A ruled fact cell composed as part of a continuous evidence rail.",
+      "html": "<div class=\"ds-evidence-fact\"><span>Paper trading</span><strong>$15,501.73</strong><small>2.12% pessimistic ROI</small></div>",
+      "css": ".ds-evidence-fact { min-height: 180px; padding: 30px 32px; border: 1px solid var(--rule); border-radius: 0; color: var(--ink); background: var(--paper); } .ds-evidence-fact span { display: block; color: var(--muted); font: 400 0.68rem/1 var(--mono); text-transform: uppercase; letter-spacing: 0.1em; } .ds-evidence-fact strong { display: block; margin-top: 30px; font: 520 clamp(2rem, 3.4vw, 3.25rem)/1 var(--display); font-variant-numeric: tabular-nums; letter-spacing: -0.025em; } .ds-evidence-fact small { display: block; margin-top: 11px; color: var(--muted); font: 400 0.78rem/1.4 var(--sans); }"
+    },
+    {
+      "name": "Verified Ledger Result",
+      "kind": "card",
+      "refersTo": "ledger-result",
+      "description": "Successful financial result cell within the four-part ledger.",
+      "html": "<div class=\"ds-ledger-result\"><span>Realized worst-case profit</span><strong>$15,501.73</strong></div>",
+      "css": ".ds-ledger-result { min-height: 170px; padding: 28px 34px; border-block: 1px solid var(--rule); border-radius: 0; color: var(--green); background: var(--green-soft); } .ds-ledger-result span { display: block; font: 400 0.68rem/1 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; } .ds-ledger-result strong { display: block; margin-top: 32px; font: 500 clamp(1.9rem, 3vw, 3.3rem)/1 var(--display); font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Selected History Row",
+      "kind": "custom",
+      "description": "Native table row that preserves host provenance and highlights the selected run.",
+      "html": "<table class=\"ds-history-table\"><thead><tr><th scope=\"col\">Run</th><th scope=\"col\">Environment</th><th scope=\"col\">p99</th></tr></thead><tbody><tr><th scope=\"row\"><button type=\"button\">Aug 21, 2026</button></th><td>Current Linux run<small>x86_64</small></td><td>0.100 µs</td></tr></tbody></table>",
+      "css": ".ds-history-table { width: 100%; border-collapse: collapse; color: var(--ink); background: var(--paper); font-variant-numeric: tabular-nums; } .ds-history-table th, .ds-history-table td { padding: 22px 18px; border-bottom: 1px solid var(--soft-rule); text-align: left; font: 400 0.78rem/1.5 var(--mono); } .ds-history-table thead th { color: var(--muted); font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.08em; } .ds-history-table tbody tr { background: var(--green-soft); } .ds-history-table button { padding: 5px 7px; border: 0; border-radius: 0; color: var(--ink); background: transparent; font: inherit; text-decoration: underline; text-underline-offset: 0.24em; cursor: pointer; } .ds-history-table button:hover { color: var(--paper); background: var(--ink); } .ds-history-table button:focus-visible { outline: 3px solid var(--copper); outline-offset: 4px; } .ds-history-table small { display: block; margin-top: 5px; color: var(--muted); }"
+    },
+    {
+      "name": "Logarithmic Budget Ruler",
+      "kind": "custom",
+      "description": "Signature semantic SVG comparing selected p99 with the engineering budget on a true log scale.",
+      "html": "<figure class=\"ds-budget-ruler\"><svg viewBox=\"0 0 300 240\" role=\"img\" aria-labelledby=\"ds-ruler-title ds-ruler-desc\"><title id=\"ds-ruler-title\">P99 hot-loop latency against its budget</title><desc id=\"ds-ruler-desc\">100 nanoseconds measured compared with a 50000 nanosecond budget on a logarithmic scale.</desc><line class=\"ds-ruler-spine\" x1=\"148\" x2=\"148\" y1=\"24\" y2=\"216\"/><line class=\"ds-ruler-budget\" x1=\"50\" x2=\"250\" y1=\"84\" y2=\"84\"/><circle class=\"ds-ruler-budget-dot\" cx=\"148\" cy=\"84\" r=\"6\"/><text class=\"ds-ruler-budget-text\" x=\"48\" y=\"70\">50 µs budget</text><line class=\"ds-ruler-measure\" x1=\"70\" x2=\"230\" y1=\"162\" y2=\"162\"/><circle class=\"ds-ruler-measure-dot\" cx=\"148\" cy=\"162\" r=\"7\"/><text class=\"ds-ruler-measure-text\" x=\"48\" y=\"190\">0.100 µs p99</text></svg><figcaption>Logarithmic scale · nanoseconds to milliseconds</figcaption></figure>",
+      "css": ".ds-budget-ruler { width: 300px; margin: 0; padding: 24px; border: 1px solid var(--ink); border-radius: 0; color: var(--muted); background: var(--paper-deep); font: 400 0.66rem/1.4 var(--mono); text-align: center; text-transform: uppercase; letter-spacing: 0.06em; } .ds-budget-ruler svg { width: 100%; height: auto; overflow: visible; } .ds-ruler-spine { stroke: var(--ink); stroke-width: 1; } .ds-ruler-budget { stroke: var(--copper); stroke-width: 1.5; stroke-dasharray: 7 6; } .ds-ruler-budget-dot { fill: var(--copper); } .ds-ruler-budget-text { fill: var(--copper); font: 11px var(--mono); } .ds-ruler-measure { stroke: var(--green); stroke-width: 2; } .ds-ruler-measure-dot { fill: var(--green); stroke: var(--paper); stroke-width: 3; } .ds-ruler-measure-text { fill: var(--green); font: 600 11px var(--mono); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Audited Proof Ledger",
+    "overview": "The system turns benchmark claims into a sequence of inspectable evidence. It borrows the authority of an engineering ledger—warm uncoated paper, carbon ink, ruled partitions, binder marks, and disciplined data labels—while letting a few measured values reach editorial scale. The result should feel skeptical, precise, and materially grounded rather than like a generic analytics dashboard.\n\nPersuasion comes from visible measurement boundaries, not decoration. A dominant result earns attention; provenance, methodology, units, comparison qualifiers, and semantic table equivalents earn trust. Verification green, comparison blue, and loss/budget copper remain functional annotations within an otherwise neutral field.",
+    "keyCharacteristics": [
+      "Editorial-scale measurements paired with compact monospaced evidence labels.",
+      "Continuous ruled sections and unequal evidence fields instead of floating metric cards.",
+      "Square controls, hairline borders, and flat paper layers with no decorative elevation.",
+      "Semantic color reserved for verification, comparison, and budget or loss states.",
+      "Explicit synthetic-workload, paper-trading, provenance, and cross-host boundaries."
+    ],
+    "rules": [
+      { "name": "The Evidence-Only Color Rule", "body": "Verification green, comparison blue, and loss/budget copper communicate data or state; they do not decorate neutral regions.", "section": "colors" },
+      { "name": "The Paper Field Rule", "body": "Warm ledger paper remains the dominant ground. Pressed paper and verification wash create only the tonal distinctions already present in the ledger.", "section": "colors" },
+      { "name": "The Measurement Leads Rule", "body": "Large Newsreader numerals state the result; nearby Plex Mono labels, units, and qualifiers define exactly what was measured.", "section": "typography" },
+      { "name": "The Mono Means Evidence Rule", "body": "Use the monospaced face for operational labels, controls, provenance, navigation, and chart annotation—not for explanatory paragraphs.", "section": "typography" },
+      { "name": "The Continuous Record Rule", "body": "Major facts share borders and alignment in one evidence rail or ledger; do not split them into detached, equally weighted cards.", "section": "layout" },
+      { "name": "The First-Viewport Proof Rule", "body": "Preserve the pairing of the dominant p99 measurement, published-run control, scope stamp, and logarithmic budget ruler at every breakpoint, even when the ruler stacks below the measurement.", "section": "layout" },
+      { "name": "The Flat Ledger Rule", "body": "Surfaces remain in the paper plane; hierarchy is created by scale, rules, alignment, and tonal fields, never shadow.", "section": "elevation" },
+      { "name": "The Square Instrument Rule", "body": "Buttons, selects, tooltip frames, bars, and content regions keep zero-radius corners.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do lead claims with dated measurements, visible units, and nearby provenance or methodology.",
+      "Do preserve the large-measurement and logarithmic-ruler pairing as the dashboard's focal proof.",
+      "Do use verification green, comparison blue, and loss/budget copper only for their implemented semantic roles.",
+      "Do provide semantic HTML or table equivalents for graphical evidence.",
+      "Do retain square corners, hairline partitions, and the continuous ledger reading order across breakpoints.",
+      "Do keep synthetic workload, paper trading, and no-live-orders scope visible."
+    ],
+    "donts": [
+      "Don't convert the evidence rail into floating metric cards or add decorative shadows.",
+      "Don't present cross-host comparisons as same-machine performance trends.",
+      "Don't use semantic evidence colors as broad decorative accents.",
+      "Don't hide paper-trading, synthetic-data, measurement-boundary, or provenance qualifiers behind interaction.",
+      "Don't replace the logarithmic budget ruler with a visually convenient linear scale.",
+      "Don't round controls, bars, tooltips, or ledger containers."
+    ]
+  }
+}

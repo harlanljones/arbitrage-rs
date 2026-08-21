@@ -1,0 +1,12 @@
+Use case: ui-mockup
+Asset type: high-fidelity desktop web dashboard comp, 1440 by 1000 landscape
+Primary request: Design a public results dashboard for the Rust project arbkit using the confirmed Proof Stack direction. Composition C is a proof ledger: the first viewport reads like an audited foldout, with an enormous left-aligned 0.100 microsecond p99 result, a vertical logarithmic budget scale along the right edge, and a lower ledger band that ties throughput, signal disposition, paper-trading PnL, and test verification into one continuous evidence sequence. A compact run selector sits in the header.
+Scene/backdrop: ink-black type on soft uncoated ivory, no photography
+Subject: measured benchmark evidence for a zero-allocation cross-venue arbitrage engine
+Style/medium: premium independent technical journal plus exchange audit statement; extremely polished data dashboard, not a poster
+Composition/framing: broad editorial margins, strong baseline grid, one oversized focal number, continuous ledger rows rather than cards, visible chart marks, a small piece of the next section
+Color palette: ivory, carbon black, oxidized copper for comparisons, safety green for pass, restrained red for phantom outcomes
+Materials/textures: uncoated paper feel kept subtle, sharp typesetting, fine rules and punched index marks
+Text (verbatim where shown): "arbkit", "0.100 µs", "p99 hot loop", "50.000 µs budget", "500× headroom", "6.35M updates/sec", "746 proportional fills", "83 phantom", "$15,501.73 paper PnL", "114 / 114 tests", "Synthetic workload · Paper trading"
+Constraints: metrics exact; visibly interactive run selector; accessible contrast; axes labeled; no claims beyond supplied evidence; no logos
+Avoid: generic hero metric cards, card grids, dark trading terminal, gradient text, glassmorphism, emoji icons, candlestick charts, crypto symbols, watermarks

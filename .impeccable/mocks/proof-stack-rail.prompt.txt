@@ -1,0 +1,12 @@
+Use case: ui-mockup
+Asset type: high-fidelity desktop web dashboard comp, 1440 by 1000 landscape
+Primary request: Design a public results dashboard for the Rust project arbkit using the confirmed Proof Stack direction. Composition B is an evidence rail: a narrow fixed left rail names the selected benchmark host and provenance, while the main field opens with "0.100 µs" as a large typographic measurement intersected by a precise percentile trace from p50 through max and a distant 50 microsecond target. The reader scrolls downward through throughput comparison, signal execution, paper PnL, and verification.
+Scene/backdrop: pale mineral-gray technical report surface, no photography
+Subject: measured benchmark evidence for a zero-allocation cross-venue arbitrage engine
+Style/medium: exceptional editorial data visualization influenced by instrumentation readouts and audited exchange ledgers; web interface, not a poster
+Composition/framing: offset columns, full-bleed chart lines, quiet persistent provenance rail, no conventional hero box and no grid of same-size cards; show beginning of second evidence section
+Color palette: mineral white, graphite, deep navy, signal orange, precise green only for verified outcomes
+Materials/textures: fine hairline rules, code and units only in mono, bold condensed editorial display type for measurements
+Text (verbatim where shown): "arbkit", "0.100 µs p99", "50.000 µs budget", "500× headroom", "Linux · x86_64", "6.35M updates/sec", "$15,501.73 paper PnL", "114 / 114 tests", "Synthetic workload · Paper trading"
+Constraints: metrics exact; provenance prominent; graph axes and units visible; charts implementable as SVG in React; legible real dashboard; no fabricated claims; no logos
+Avoid: generic admin UI, dark cyberpunk, gradient text, glass panels, rounded card mosaic, blockchain motifs, candlesticks, vague unlabeled shapes, watermarks

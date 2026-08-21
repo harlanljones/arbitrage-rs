@@ -1,0 +1,17 @@
+[package]
+name = "arbkit-sim"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Paper trading, latency simulation, and phantom-rate measurement"
+
+[dependencies]
+arbkit-core = { path = "../arbkit-core" }
+arbkit-match = { path = "../arbkit-match" }
+arbkit-feed = { path = "../arbkit-feed" }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }

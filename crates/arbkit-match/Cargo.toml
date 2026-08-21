@@ -1,0 +1,15 @@
+[package]
+name = "arbkit-match"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Canonical event registry and venue symbol matching"
+
+[dependencies]
+arbkit-core = { path = "../arbkit-core" }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }

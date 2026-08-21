@@ -1,0 +1,12 @@
+Use case: ui-mockup
+Asset type: high-fidelity desktop web dashboard comp, 1440 by 1000 landscape
+Primary request: Design a public results dashboard for the Rust project arbkit using the confirmed Proof Stack direction. Composition A is a calibration wall: a restrained top navigation, then a dominant logarithmic latency ruler spanning most of the first viewport with the measured dot at 0.100 microseconds and the budget marker at 50.000 microseconds, making 500x headroom immediately legible. Below the fold begin throughput and execution evidence bands.
+Scene/backdrop: flat warm bone report paper, no photography
+Subject: measured benchmark evidence for a zero-allocation cross-venue arbitrage engine
+Style/medium: exceptional editorial data visualization, precision laboratory calibration sheet meets financial exchange execution report; semantic web interface, not a poster
+Composition/framing: asymmetric full-width ruled bands, dense but calm, one dominant chart, no grid of cards, enough second-fold content visible
+Color palette: warm bone, near-black ink, electric chartreuse for pass/headroom, restrained cobalt for Apple baseline, vermilion only for phantom loss
+Materials/textures: crisp printed rules and tiny registration marks, extremely subtle paper tooth, no fake grain
+Text (verbatim where shown): "arbkit", "0.100 µs", "50.000 µs budget", "500× headroom", "6.35M updates/sec", "$15,501.73 paper PnL", "114 / 114 tests", "Synthetic workload · Paper trading"
+Constraints: precise professional typography; metrics must remain exactly as provided; clearly label synthetic workload and paper trading; show chart axes and units; charts should look implementable in React and SVG; no fabricated live trading claims; no logos
+Avoid: generic SaaS cards, dark cyberpunk dashboard, gradient text, glassmorphism, neon glow, stock icons, crypto imagery, candlestick charts, rounded pill overload, fake testimonials, illegible microtext, watermarks

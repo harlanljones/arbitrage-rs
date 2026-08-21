@@ -1,0 +1,19 @@
+[package]
+name = "arbkit-feed"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Venue connectors, feed event models, and tape recorder"
+
+[dependencies]
+arbkit-core = { path = "../arbkit-core" }
+arbkit-match = { path = "../arbkit-match" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+

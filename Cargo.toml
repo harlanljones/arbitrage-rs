@@ -1,0 +1,37 @@
+[workspace]
+members = [
+    "crates/arbkit-core",
+    "crates/arbkit-match",
+    "crates/arbkit-feed",
+    "crates/arbkit-engine",
+    "crates/arbkit-sim",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/harlanljones/arbkit"
+rust-version = "1.83"
+
+[workspace.dependencies]
+thiserror = "2"
+proptest = "1"
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+
+# The hot path is a single thread doing integer arithmetic over a preallocated
+# book. Everything here exists to stop the compiler from leaving cross-crate
+# calls unavailable for inlining, and to make a panic a crash rather than an
+# unwind through code that assumes it never happens.
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
+# Benchmarks need the release codegen but not the abort-on-panic, since
+# criterion catches panics to report them.
+[profile.bench]
+lto = "fat"
+codegen-units = 1

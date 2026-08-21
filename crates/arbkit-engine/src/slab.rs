@@ -1,0 +1,221 @@
+//! Preallocated engine state and flat order book slab.
+//!
+//! Hot path lookups are direct integer-indexed O(1) arithmetic operations with
+//! zero allocations and no hashmap lookups.
+
+use crate::error::{EngineError, Result};
+use arbkit_core::book::{Cents, MarketId, OutcomeBook, OutcomeId, VenueId};
+use arbkit_core::{Fee, MAX_LEGS};
+
+/// Default maximum number of markets preallocated in the slab.
+pub const DEFAULT_MAX_MARKETS: usize = 1024;
+
+/// Maximum number of outcomes supported per market.
+pub const MAX_OUTCOMES: usize = MAX_LEGS;
+
+/// Maximum number of venues supported per outcome.
+pub const MAX_VENUES: usize = 8;
+
+/// Configuration and fee parameters for an active market.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MarketConfig {
+    /// Number of mutually exclusive outcomes for this market (2 to 4).
+    pub outcome_count: u8,
+    /// Per-venue fee structures applied before arbitrage detection.
+    pub venue_fees: [Fee; MAX_VENUES],
+    /// Per-venue stake increments in cents (e.g. 1 cent or contract price).
+    pub venue_increments: [Cents; MAX_VENUES],
+    /// Maximum stake budget in cents evaluated during detection.
+    pub budget: Cents,
+    /// Whether this market is currently active and eligible for detection.
+    pub active: bool,
+}
+
+impl Default for MarketConfig {
+    fn default() -> Self {
+        Self {
+            outcome_count: 2,
+            venue_fees: [Fee::None; MAX_VENUES],
+            venue_increments: [1; MAX_VENUES],
+            budget: 100_000,
+            active: false,
+        }
+    }
+}
+
+/// Preallocated slab holding all [`OutcomeBook`]s and market configurations.
+#[derive(Debug, Clone)]
+pub struct EngineSlab {
+    books: Vec<OutcomeBook>,
+    configs: Vec<MarketConfig>,
+    max_markets: usize,
+}
+
+impl EngineSlab {
+    /// Creates a new slab preallocating storage for up to `max_markets`.
+    pub fn new(max_markets: usize) -> Self {
+        let total_books = max_markets * MAX_OUTCOMES * MAX_VENUES;
+        let mut books = Vec::with_capacity(total_books);
+        for _ in 0..total_books {
+            books.push(OutcomeBook::new());
+        }
+
+        let mut configs = Vec::with_capacity(max_markets);
+        for _ in 0..max_markets {
+            configs.push(MarketConfig::default());
+        }
+
+        Self {
+            books,
+            configs,
+            max_markets,
+        }
+    }
+
+    /// Computes the flat slab index for a `(market_id, outcome_id, venue_id)` tuple.
+    #[inline]
+    fn flat_index(
+        &self,
+        market_id: MarketId,
+        outcome_id: OutcomeId,
+        venue_id: VenueId,
+    ) -> Option<usize> {
+        let m = market_id as usize;
+        let o = outcome_id as usize;
+        let v = venue_id as usize;
+
+        if m >= self.max_markets || o >= MAX_OUTCOMES || v >= MAX_VENUES {
+            return None;
+        }
+
+        Some((m * MAX_OUTCOMES + o) * MAX_VENUES + v)
+    }
+
+    /// Registers a market's configuration in the slab.
+    pub fn register_market(&mut self, market_id: MarketId, config: MarketConfig) -> Result<()> {
+        let m = market_id as usize;
+        if m >= self.max_markets {
+            return Err(EngineError::MarketOutOfRange {
+                market_id,
+                capacity: self.max_markets,
+            });
+        }
+        if !(2..=4).contains(&config.outcome_count) {
+            return Err(EngineError::Core(
+                arbkit_core::ArbError::LegCountOutOfRange(config.outcome_count as usize),
+            ));
+        }
+
+        self.configs[m] = config;
+        Ok(())
+    }
+
+    /// Returns a reference to the [`OutcomeBook`] for the given tuple, or `None` if out of bounds.
+    #[inline]
+    pub fn get_book(
+        &self,
+        market_id: MarketId,
+        outcome_id: OutcomeId,
+        venue_id: VenueId,
+    ) -> Option<&OutcomeBook> {
+        let idx = self.flat_index(market_id, outcome_id, venue_id)?;
+        Some(&self.books[idx])
+    }
+
+    /// Returns a mutable reference to the [`OutcomeBook`] for the given tuple.
+    #[inline]
+    pub fn get_book_mut(
+        &mut self,
+        market_id: MarketId,
+        outcome_id: OutcomeId,
+        venue_id: VenueId,
+    ) -> Option<&mut OutcomeBook> {
+        let idx = self.flat_index(market_id, outcome_id, venue_id)?;
+        Some(&mut self.books[idx])
+    }
+
+    /// Returns a reference to the [`MarketConfig`] for `market_id`.
+    #[inline]
+    pub fn get_config(&self, market_id: MarketId) -> Option<&MarketConfig> {
+        let m = market_id as usize;
+        if m < self.max_markets {
+            Some(&self.configs[m])
+        } else {
+            None
+        }
+    }
+
+    /// Returns a mutable reference to the [`MarketConfig`] for `market_id`.
+    #[inline]
+    pub fn get_config_mut(&mut self, market_id: MarketId) -> Option<&mut MarketConfig> {
+        let m = market_id as usize;
+        if m < self.max_markets {
+            Some(&mut self.configs[m])
+        } else {
+            None
+        }
+    }
+
+    /// Returns the maximum number of markets supported in this slab.
+    #[inline]
+    pub fn max_markets(&self) -> usize {
+        self.max_markets
+    }
+
+    /// Resets all books to empty/stale state and deactivates configs.
+    pub fn reset(&mut self) {
+        for book in &mut self.books {
+            *book = OutcomeBook::new();
+        }
+        for config in &mut self.configs {
+            *config = MarketConfig::default();
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use arbkit_core::book::Level;
+    use arbkit_core::Prob;
+
+    #[test]
+    fn test_slab_indexing_and_updates() {
+        let mut slab = EngineSlab::new(10);
+        let config = MarketConfig {
+            active: true,
+            outcome_count: 2,
+            budget: 50_000,
+            ..Default::default()
+        };
+
+        assert!(slab.register_market(0, config).is_ok());
+        assert!(slab.get_config(0).unwrap().active);
+
+        let book = slab.get_book_mut(0, 1, 2).unwrap();
+        assert!(book.is_stale());
+
+        book.apply_snapshot(
+            &[Level {
+                price: Prob::from_cents(50).unwrap(),
+                size: 1_000,
+            }],
+            1,
+        );
+
+        let read_book = slab.get_book(0, 1, 2).unwrap();
+        assert!(!read_book.is_stale());
+        assert_eq!(read_book.best().unwrap().price.ppm(), 500_000);
+    }
+
+    #[test]
+    fn test_slab_out_of_bounds() {
+        let mut slab = EngineSlab::new(4);
+        assert!(slab.get_book(4, 0, 0).is_none());
+        assert!(slab.get_book(0, 4, 0).is_none());
+        assert!(slab.get_book(0, 0, 8).is_none());
+
+        let config = MarketConfig::default();
+        assert!(slab.register_market(4, config).is_err());
+    }
+}

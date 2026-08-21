@@ -1,0 +1,6 @@
+{
+  "approved": true,
+  "approval": "Delegated by the user's request to implement the confirmed Proof Stack plan; selected because the proof-ledger composition matches the plan's first viewport and continuous evidence sequence.",
+  "seed": "a0696a55",
+  "promptFile": "proof-stack-ledger.prompt.txt"
+}

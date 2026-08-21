@@ -1,0 +1,20 @@
+[package]
+name = "arbkit-engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Hot loop, preallocated order book slab, SPSC queue, and latency histogram"
+
+[dependencies]
+arbkit-core = { path = "../arbkit-core" }
+arbkit-match = { path = "../arbkit-match" }
+arbkit-feed = { path = "../arbkit-feed" }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+arbkit-sim = { path = "../arbkit-sim" }
+proptest = { workspace = true }
+serde = { workspace = true, features = ["std"] }
+serde_json = { workspace = true, features = ["std"] }

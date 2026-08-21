@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "run": {
+    "id": "2026-08-21T205656-880Z-linux-x86_64-38c3855",
+    "recordedAtEpochMs": 1787345816880,
+    "source": "measured",
+    "projectVersion": "0.1.0",
+    "gitCommit": "38c3855",
+    "recordedAt": "2026-08-21T20:56:56.880Z"
+  },
+  "environment": {
+    "label": "linux x86_64",
+    "os": "linux",
+    "arch": "x86_64",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14) (Arch Linux rust 1:1.97.1-1)",
+    "buildProfile": "release"
+  },
+  "workload": {
+    "synthetic": true,
+    "paperTrading": true,
+    "feedEvents": 2000000,
+    "event": "Boston Celtics @ Los Angeles Lakers",
+    "market": "Moneyline (2-way)",
+    "venues": [
+      "Kalshi",
+      "Polymarket",
+      "Pinnacle"
+    ]
+  },
+  "performance": {
+    "elapsedMs": 161.664873,
+    "throughputPerSecond": 12371271.277960304,
+    "targetP99Ns": 50000,
+    "latencyNs": {
+      "count": 829,
+      "min": 92,
+      "mean": 97,
+      "p50": 90,
+      "p90": 100,
+      "p99": 100,
+      "p999": 740,
+      "max": 744
+    }
+  },
+  "detection": {
+    "eventsProcessed": 2000004,
+    "signalsEmitted": 829,
+    "collectedSignals": 829,
+    "sample": {
+      "profitBps": 22,
+      "totalStakeCents": 99940,
+      "guaranteedProfitCents": 227
+    }
+  },
+  "simulation": {
+    "totalSignals": 829,
+    "cleanFills": 0,
+    "proportionalFills": 746,
+    "phantoms": 83,
+    "phantomRateBps": 1001,
+    "filledStakeCents": 72876755,
+    "feesPaidCents": 2605032,
+    "realizedProfitCents": 1550173,
+    "realizedRoiBps": 212
+  }
+}

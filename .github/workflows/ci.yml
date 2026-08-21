@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    name: Rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+      # The domain core carries no network, no clock, and no credentials, so
+      # this is the fast inner loop and runs first.
+      - run: cargo test -p arbkit-core
+
+      - run: cargo test --workspace
+
+      - run: cargo doc --workspace --all-features --no-deps
+
+      - run: cargo run --example pipeline --release -- --json /tmp/arbkit-pipeline-report.json
+
+      - name: Verify results dashboard
+        working-directory: dashboard
+        run: |
+          npm ci
+          npm test
+          npm run validate:report -- /tmp/arbkit-pipeline-report.json
+          npm run build
+
+      # The core must stay free of I/O. A tokio or reqwest in this graph means
+      # the hot path picked up an allocator-heavy dependency by accident, and
+      # it is far cheaper to catch here than in a latency histogram.
+      - name: Check that the domain core has no I/O dependencies
+        run: |
+          forbidden='^(tokio|reqwest|hyper|mio|socket2|tungstenite)'
+          if cargo tree -p arbkit-core --prefix none --no-dedupe \
+              | sort -u | grep -qE "$forbidden"; then
+            echo "arbkit-core has picked up an I/O dependency:"
+            cargo tree -p arbkit-core --prefix none --no-dedupe \
+              | sort -u | grep -E "$forbidden"
+            exit 1
+          fi
