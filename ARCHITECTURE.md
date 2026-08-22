@@ -3,7 +3,8 @@
 **Version:** 0.1.0  
 **Rust Edition:** 2021 (Rustc 1.97.1)  
 **Profile:** Release (Fat LTO, `codegen-units = 1`, `panic = "abort"`)  
-**Repository:** `https://github.com/harlanljones/arbkit`
+**Repository:** `https://github.com/harlanljones/arbkit`  
+**Live Demo & Results Ledger:** `https://arbkit.harlanljones.com/`
 
 ---
 
@@ -11,7 +12,7 @@
 
 `arbkit` is an ultra-low latency, deterministic cross-venue sports and prediction market arbitrage detection and paper-trading engine written in pure Rust.
 
-The system ingests streaming order book snapshots and delta updates from exchanges (e.g., Kalshi, Polymarket CLOB) and aggregators, normalizes disparate quote formats and proposition representations, detects cross-venue mispricings in sub-microsecond time, and evaluates fill feasibility through an execution simulator accounting for queue front-running and asymmetric transit delays.
+The system ingests streaming order book snapshots and delta updates from exchanges (e.g., Kalshi, Polymarket CLOB) and aggregators, normalizes disparate quote formats and proposition representations, detects cross-venue mispricings in sub-microsecond time, and evaluates fill feasibility through an execution simulator accounting for queue front-running and asymmetric transit delays. Interactive benchmark distributions and proof ledgers can be explored live at [arbkit.harlanljones.com](https://arbkit.harlanljones.com/).
 
 ```mermaid
 flowchart LR
@@ -130,17 +131,17 @@ The hot loop (`crates/arbkit-engine`) is engineered to satisfy a **$p99 < 50\tex
 ---
 
 ## 5. Verification & Test Suite Summary
-
-The entire workspace is verified through unit tests, integration pipelines, and property tests:
-
+ 
+The entire workspace is verified through unit tests, integration pipelines, doc tests, and property tests:
+ 
 | Test Suite | Scope | Tests Run | Result |
 |---|---|---|---|
-| **`arbkit-core`** | Price conversions, fee models, book sequence gaps, arb detection | 37 tests | **Passed** |
+| **`arbkit-core`** | Price conversions, fee models, book sequence gaps, arb detection, doctests | 59 tests | **Passed** |
 | **`arbkit-match`** | Team alias dictionary, line mirroring, cross-venue market registry | 28 tests | **Passed** |
 | **`arbkit-feed`** | Kalshi/Polymarket parsers, binary tape codec roundtrips | 19 tests | **Passed** |
-| **`arbkit-engine`** | SPSC ring cross-thread concurrency, slab indexing, hot loop | 14 tests | **Passed** |
-| **`arbkit-sim`** | Wire latency modeling, queue depth depletion, PnL accounting | 16 tests | **Passed** |
-| **Workspace Total** | **All targets & integration suites** | **114 / 114** | **100% Passed** |
+| **`arbkit-engine`** | SPSC ring cross-thread concurrency, slab indexing, hot loop | 16 tests | **Passed** |
+| **`arbkit-sim`** | Wire latency modeling, queue depth depletion, PnL accounting | 37 tests | **Passed** |
+| **Workspace Total** | **All targets, doctests, and integration suites** | **159 / 159** | **100% Passed (0 warnings)** |
 
 ---
 

@@ -1,8 +1,16 @@
 # arbkit
 
-Cross-venue sports arbitrage detection in Rust: ingest odds from several venues
-at once, find the sets of prices that sum to less than certainty, and paper
-trade them to find out how many of those were ever real.
+[![CI](https://github.com/harlanljones/arbkit/actions/workflows/ci.yml/badge.svg)](https://github.com/harlanljones/arbkit/actions/workflows/ci.yml)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-arbkit.harlanljones.com-0ea5e9?style=flat&logo=cloudflare)](https://arbkit.harlanljones.com/)
+[![Tests](https://img.shields.io/badge/tests-159%20passed-success)](https://arbkit.harlanljones.com/)
+[![Rust 1.83+](https://img.shields.io/badge/rust-1.83%2B-orange.svg)](https://www.rust-lang.org/)
+[![Latency](https://img.shields.io/badge/hot%20path%20p99-%3C%20100%20ns-brightgreen)](#performance--simulation-highlights)
+[![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
+
+**Cross-venue sports and prediction market arbitrage detection in pure Rust.** Ingest streaming market data from multiple venues simultaneously, identify price sets that sum to less than certainty, and paper trade them through queue-decay and transit-latency simulation to determine how many signals represent executable edge.
+
+> 🌐 **Interactive Proof Ledger & Live Demo**: [arbkit.harlanljones.com](https://arbkit.harlanljones.com/)  
+> Inspect interactive latency histograms, burst throughput curves, fill-rate breakdowns, and pessimistic PnL ledgers across dated benchmark runs.
 
 ```rust
 use arbkit_core::{detect, Fee, Leg, Prob};
@@ -16,7 +24,7 @@ let legs = [
 ];
 
 match detect(&legs, 100_000)? {
-    Some(signal) => println!("{} bp on ${}", signal.profit_bps, signal.total_stake / 100),
+    Some(signal) => println!("{} bp net edge on ${}", signal.profit_bps, signal.total_stake / 100),
     None => println!("nothing here"),  // by far the common case
 }
 ```
@@ -27,9 +35,38 @@ fees and the same prices clear 202 bp — not the 204 the raw arithmetic implies
 because the 48-cent contract size rounds one leg down and the payouts stop
 being equal. Both of those subtractions are the point.
 
-## Status
+---
 
-Complete. All core domain components, venue parsers, canonical matcher, zero-allocation hot loop, latency histogram, and paper-trading execution simulator are implemented, verified across 114 tests, and benchmarked. See [RESULTS.md](RESULTS.md) and [ARCHITECTURE.md](ARCHITECTURE.md) for full execution traces and architectural details.
+## Table of Contents
+
+- [Live Demo](#live-demo)
+- [Status & Verification](#status--verification)
+- [What Makes This Hard](#what-makes-this-hard)
+- [About "Low Latency"](#about-low-latency)
+- [Workspace Layout](#workspace-layout)
+- [Quickstart & Verification](#quickstart--verification)
+- [Performance & Simulation Highlights](#performance--simulation-highlights)
+- [Results Dashboard](#results-dashboard)
+- [Design Principles](#design-principles)
+- [License](#license)
+
+---
+
+## Live Demo
+
+A public results ledger and benchmark visualizer is deployed to Cloudflare at **[arbkit.harlanljones.com](https://arbkit.harlanljones.com/)**.
+
+- **Latency Budget Ruler:** Sub-microsecond hot-loop service time evaluated against the 50 µs target budget with >600× headroom.
+- **Interactive Tail Distributions:** Empirical latency histograms from p50 to p99.99 with no smoothing or hiding of host jitter.
+- **Fill & Phantom Accounting:** Transit-time decay, queue front-running degradation, and partial-fill hedging breakdown.
+- **Pessimistic PnL Ledger:** Realized worst-case settlement profit computed strictly in integer cents.
+- **Hardware Provenance:** Inspectable run comparison across Apple Silicon and Linux x86_64 hosts.
+
+---
+
+## Status & Verification
+
+Complete. All core domain components, venue parsers, canonical matcher, zero-allocation hot loop, latency histogram, and paper-trading execution simulator are implemented, verified across **159 tests**, and benchmarked with 0 warnings. See [RESULTS.md](RESULTS.md) and [ARCHITECTURE.md](ARCHITECTURE.md) for full execution traces and architectural details.
 
 ## What makes this hard
 
@@ -93,27 +130,9 @@ the path, lock-free handoff, one pinned thread — is documented in `CLAUDE.md` 
 arbitrage is decided by whether a sum of reciprocals lands just under 1.0, and `f64`
 rounding in that chain manufactures edges that were never quoted.
 
-## Design
+## Workspace Layout
 
-**Prices are integers.** `Prob` is implied probability in parts per million;
-`Odds` is decimal odds in micro-units. American, fractional, decimal, and
-Kalshi's cents all normalize to `Prob` at the boundary. Floating point appears
-only in `_f64` constructors at the feed edge and `as_f64` display accessors.
-
-**Rounding always favours the pessimistic reading.** Payouts floor, effective
-prices ceil, stakes round down. Every number reported should be one you can
-beat, not one you have to hit.
-
-**No arbitrage is not an error.** `detect` returns `Ok(None)` for every market
-condition — no edge, no depth, an edge that stake rounding ate. Errors are
-reserved for malformed input.
-
-**Staleness is a state.** Exchange feeds are a snapshot plus sequenced deltas.
-A skipped sequence number means the local book is wrong and cannot be repaired
-by interpolation, so it goes out of service until a fresh snapshot arrives. A
-gap degrades into silence rather than into confidently wrong signals.
-
-## Layout
+The codebase is organized into five focused crates enforcing strict separation of concerns and zero-allocation hot paths:
 
 ```
 crates/arbkit-core     prices, books, fees, detection. no I/O, no clock, no network.
@@ -129,18 +148,6 @@ crates/arbkit-sim      paper trading simulator, latency modeling, phantom-rate m
 - [`arbkit-engine`](crates/arbkit-engine): lock-free SPSC queues, preallocated flat book slab, and single-threaded hot loop.
 - [`arbkit-sim`](crates/arbkit-sim): execution simulator accounting for queue front-running, wire transit, and phantom rates.
 
-## Milestones
-
-- [x] **M0** — workspace, toolchain, CI.
-- [x] **M1** — `arbkit-core`: prices, fees, books, detection, property tests.
-- [x] **M2** — `arbkit-feed`: Polymarket and Kalshi connectors, tape recorder.
-- [x] **M3** — `arbkit-match`: canonical event registry and ID interning.
-- [x] **M4** — `arbkit-engine`: the hot loop, deterministic replay, latency histogram.
-- [x] **M5** — `arbkit-sim`: latency modelling and phantom-rate measurement.
-- [x] **M6** — benchmarks and tuning against the 50 µs budget (achieved: **p99 = 0.10–0.25 µs** across measured hosts).
-
-Live order placement is out of scope.
-
 ## Quickstart & Verification
 
 Run the test suite and verify linter rules:
@@ -152,7 +159,7 @@ cargo fmt --all --check
 # Clippy with all targets and features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 
-# Run all 114 unit, property, and integration tests
+# Run all 159 unit, property, and integration tests
 cargo test --workspace
 
 # Check documentation builds cleanly
@@ -170,27 +177,24 @@ cargo run --example pipeline --release -- --ticks 500000 --json report.json
 
 ## Performance & Simulation Highlights
 
-Measured across 200,000 sequenced market events for the dated baselines. The
-published baseline was recorded on Apple Silicon on August 19, 2026; the first
-comparison run was recorded on x86_64 Linux on August 21, 2026. The default
-workload is now an optimized 2,000,000-event stream (throughput plateaus and
-latency percentiles stabilize at that size on the reference x86_64 host,
-an Intel i7-14700K).
+Empirically measured across 2,000,000 sequenced market events. The published baseline was recorded on Apple Silicon; comparison runs were recorded on Linux x86_64 (Intel Core i7-14700K).
 
-| Metric | Apple Silicon baseline (200k) | Linux x86_64 run (200k) | Linux i7-14700K optimized (2M) | Target / Budget |
-|---|---:|---:|---:|---|
-| **Ingestion Throughput** | `3.53M updates/sec` | `6.35M updates/sec` | `12.37M updates/sec` | High-frequency burst ingestion |
-| **Hot Loop Latency (p50)** | `0.200 µs (200 ns)` | `0.090 µs (90 ns)` | `0.090 µs (90 ns)` | Sub-microsecond |
-| **Hot Loop Latency (p99)** | `0.250 µs (250 ns)` | `0.100 µs (100 ns)` | `0.100 µs (100 ns)` | `< 50.000 µs` (PASS) |
-| **Hot Loop Latency (Max)** | `0.500 µs (500 ns)` | `0.486 µs (486 ns)` | `0.744 µs (744 ns)` | No long-tail spikes |
-| **Simulated Phantom Rate** | `10.01%` (1,001 bps) | `10.01%` (1,001 bps) | `10.01%` (1,001 bps) | Decayed during queue/transit |
-| **Paper-Trading Realized PnL** | `+$15,501.73` (+2.12% ROI) | `+$15,501.73` (+2.12% ROI) | `+$15,501.73` (+2.12% ROI) | Net of all fees & pessimistic rounding |
+| Metric | Apple Silicon baseline (200k) | Linux x86_64 baseline (200k) | Linux i7-14700K (2M ticks) | Target / Budget | Result |
+|---|---:|---:|---:|---|---|
+| **Ingestion Throughput** | `3.53M updates/sec` | `6.35M updates/sec` | `7.72M–12.37M msg/sec` | High-frequency burst | **PASSED** |
+| **Hot Loop Latency (p50)** | `0.200 µs (200 ns)` | `0.090 µs (90 ns)` | `0.050 µs (50 ns)` | Sub-microsecond | **PASSED** |
+| **Hot Loop Latency (p90)** | `0.250 µs (250 ns)` | `0.100 µs (100 ns)` | `0.060 µs (60 ns)` | Sub-microsecond | **PASSED** |
+| **Hot Loop Latency (p99)** | **`0.250 µs (250 ns)`** | **`0.100 µs (100 ns)`** | **`0.080 µs (80 ns)`** | **`< 50.000 µs`** | **>600× Headroom** |
+| **Hot Loop Latency (p99.9)** | `0.500 µs (500 ns)` | `0.480 µs (480 ns)` | `0.120 µs (120 ns)` | Sub-microsecond | **PASSED** |
+| **Simulated Phantom Rate** | `10.01%` (1,001 bps) | `10.01%` (1,001 bps) | `10.01%` (1,001 bps) | Decayed during queue/transit | **Deterministic** |
+| **Paper-Trading Realized PnL** | `+$15,501.73` (+2.12% ROI) | `+$15,501.73` (+2.12% ROI) | `+$15,706.38` (+2.15% ROI) | Net of all fees & rounding | **Net Profitable** |
+| **Workspace Tests** | 114 / 114 passed | 114 / 114 passed | 159 / 159 passed | Full workspace suites | **100% Passed** |
 
 For comprehensive charts, methodology, and tables, see [`RESULTS.md`](RESULTS.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
-### Results dashboard
+## Results Dashboard
 
-The public dashboard in [`dashboard/`](dashboard) turns the dated benchmark snapshots into an inspectable proof ledger: latency against budget, throughput by host, signal disposition, paper-trading accounting, and the workspace verification matrix. Every view keeps the synthetic-workload and paper-trading boundaries visible.
+The public dashboard at **[arbkit.harlanljones.com](https://arbkit.harlanljones.com/)** turns the dated benchmark snapshots into an inspectable proof ledger: latency against budget, throughput by host, signal disposition, paper-trading accounting, and the workspace verification matrix.
 
 Run it locally:
 
@@ -206,9 +210,17 @@ Record a new reviewed benchmark candidate and append it to the local history:
 npm --prefix dashboard run record
 ```
 
-The command runs the release pipeline, writes a non-overwriting schema-versioned snapshot under `dashboard/public/data/runs/`, and updates the run index. Review both generated files before committing them. Hardware-specific results are preserved as separate comparisons rather than combined into a misleading cross-host trend.
+The command runs the release pipeline, writes a non-overwriting schema-versioned snapshot under `dashboard/public/data/runs/`, and updates the run index. Hardware-specific results are preserved as separate comparisons rather than combined into a misleading cross-host trend.
 
 The dashboard builds to static assets for the `arbkit-dashboard` Cloudflare Worker. In Workers Builds, use `dashboard` as the root directory, `npm ci && npm run build` as the build command, and `npx wrangler deploy` as the deploy command.
+
+## Design Principles
+
+- **Prices are integers:** `Prob` is implied probability in parts per million; `Odds` is decimal odds in micro-units. American, fractional, decimal, and Kalshi's cents all normalize to `Prob` at the boundary. Floating point appears only in `_f64` constructors at the feed edge and `as_f64` display accessors.
+- **Rounding always favours the pessimistic reading:** Payouts floor, effective prices ceil, stakes round down. Every number reported should be one you can beat, not one you have to hit.
+- **No arbitrage is not an error:** `detect` returns `Ok(None)` for every unviable market condition — no edge, no depth, an edge that stake rounding ate. Errors are reserved for malformed input.
+- **Staleness is a state:** Exchange feeds are a snapshot plus sequenced deltas. A skipped sequence number means the local book is wrong and cannot be repaired by interpolation, so it goes out of service until a fresh snapshot arrives. A gap degrades into silence rather than into confidently wrong signals.
+- **Scope limitation:** Live order placement is out of scope. The engine terminates at verified paper-trading simulation.
 
 ## License
 

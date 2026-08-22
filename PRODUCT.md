@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-The core project is a Rust 2021 workspace. Its public results dashboard uses React, TypeScript, and Vite, ships as static assets on Cloudflare Workers, and deploys through Workers Builds.
+The core project is a Rust 2021 workspace. Its public results dashboard uses React, TypeScript, and Vite, ships as static assets on Cloudflare Workers, and deploys through Workers Builds to `https://arbkit.harlanljones.com/`.
 
 ## Users
 
@@ -24,7 +24,7 @@ The project separates canonical market matching from a fixed-point, zero-allocat
 
 ## Operating Context
 
-Engineers run the release pipeline locally, review the console report and generated JSON snapshot, then commit approved dated results. Cloudflare Workers Builds publishes the static dashboard from repository history. Live order placement is not part of the project.
+Engineers run the release pipeline locally, review the console report and generated JSON snapshot, then commit approved dated results. Cloudflare Workers Builds publishes the static dashboard to `https://arbkit.harlanljones.com/` from repository history. Live order placement is not part of the project.
 
 ## Capabilities and Constraints
 
@@ -40,10 +40,11 @@ The name is `arbkit`. The voice is technically precise, skeptical of theoretical
 
 ## Evidence on Hand
 
-- `RESULTS.md` contains dated Apple Silicon and x86_64 Linux benchmark results, simulator accounting, and the 114-test verification matrix.
-- `README.md` contains the project status, latency budget, performance highlights, and scope limitations.
+- `RESULTS.md` contains dated Apple Silicon and x86_64 Linux benchmark results, simulator accounting, and the 159-test verification matrix.
+- `README.md` contains the project status, latency budget, performance highlights, live demo link, and scope limitations.
 - `ARCHITECTURE.md` documents the workspace, hot-path invariants, and end-to-end data flow.
 - `crates/arbkit-engine/examples/pipeline.rs` is the executable source of generated benchmark and paper-trading metrics.
+- Live public dashboard is available at `https://arbkit.harlanljones.com/`.
 - No live-trading performance, customer claims, testimonials, or production order-placement evidence exists and none may be fabricated.
 
 ## Product Principles

@@ -1,18 +1,17 @@
 # `arbkit`: Benchmark & Pipeline Execution Results
 
-**Version:** 0.1.0
-
-**Test Dates:** August 19, 2026 (baseline); August 21, 2026 (Linux x86_64, earlier revision); August 21, 2026 (this run, commit `f9623ab`)
-
-**Toolchain:** `rustc 1.97.1` (`aarch64-apple-darwin` baseline; `x86_64-unknown-linux-gnu` current)
-
-**Build Profile:** `release` (`lto = "fat"`, `codegen-units = 1`, `panic = "abort"`)
+**Version:** 0.1.0  
+**Repository:** `https://github.com/harlanljones/arbkit`  
+**Live Interactive Dashboard:** `https://arbkit.harlanljones.com/`  
+**Test Dates:** August 19, 2026 (baseline); August 21, 2026 (Linux x86_64, earlier revision); August 21, 2026 (this run, commit `f9623ab`)  
+**Toolchain:** `rustc 1.97.1` (`aarch64-apple-darwin` baseline; `x86_64-unknown-linux-gnu` current)  
+**Build Profile:** `release` (`lto = "fat"`, `codegen-units = 1`, `panic = "abort"`)  
 
 ---
 
 ## 1. Executive Summary
 
-This report documents the live end-to-end pipeline execution results of `arbkit` across market data ingestion, single-threaded hot loop detection, sub-microsecond latency measurement, and execution simulation.
+This report documents the live end-to-end pipeline execution results of `arbkit` across market data ingestion, single-threaded hot loop detection, sub-microsecond latency measurement, and execution simulation. All benchmark distributions and financial ledgers can be interactively explored in the live web application at **[arbkit.harlanljones.com](https://arbkit.harlanljones.com/)**.
 
 The August 21 columns are two separate measurements on the **same** Linux
 i7-14700K host, taken at different points in the codebase's history — the
