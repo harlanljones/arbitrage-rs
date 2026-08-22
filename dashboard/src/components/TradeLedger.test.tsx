@@ -116,8 +116,23 @@ describe("TradeLedger summary and table", () => {
     expect(screen.getByText("$4.50 → -$47.50")).toBeInTheDocument();
   });
 
+  it("starts with the per-trade table collapsed to keep the page short", () => {
+    render(<TradeLedger log={log} />);
+    const toggle = screen.getByRole("button", { name: /inspect the per-trade table/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(document.querySelector("table.trade-table")).toBeNull();
+  });
+
+  function openTradeTable() {
+    fireEvent.click(screen.getByRole("button", { name: /inspect the per-trade table/i }));
+    return document.querySelector("table.trade-table") as HTMLElement;
+  }
+
   it("filters by classification chip and reports the count live", () => {
     render(<TradeLedger log={log} />);
+    expect(screen.getByRole("button", { name: /inspect the per-trade table \(2\)/i })).toBeInTheDocument();
+
+    openTradeTable();
     expect(screen.getByText(/showing 2 of 2/i)).toBeInTheDocument();
 
     // Removing the phantom chip leaves only the profitable clean trade.
@@ -131,6 +146,7 @@ describe("TradeLedger summary and table", () => {
 
   it("toggles profitable-only and hides losing trades", async () => {
     render(<TradeLedger log={log} />);
+    openTradeTable();
     const chip = screen.getByRole("button", { name: "Profitable only" });
     expect(chip).toHaveAttribute("aria-pressed", "false");
     fireEvent.click(chip);
@@ -141,6 +157,7 @@ describe("TradeLedger summary and table", () => {
 
   it("sorts by realized profit ascending on second click", async () => {
     render(<TradeLedger log={log} />);
+    openTradeTable();
     const tradeTable = document.querySelector("table.trade-table") as HTMLElement;
     // The chart's data table also contributes rows; scope to the trade table.
     const rows = () =>
@@ -154,6 +171,7 @@ describe("TradeLedger summary and table", () => {
 
   it("expands a row into its per-leg audit with statuses and reasons", async () => {
     render(<TradeLedger log={log} />);
+    openTradeTable();
 
     const expanders = screen.getAllByRole("button", { name: /show legs/i });
     expect(expanders).toHaveLength(2);

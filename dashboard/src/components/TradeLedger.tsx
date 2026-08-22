@@ -88,6 +88,9 @@ function TradeLedgerBody({ log }: { log: TradeLog }) {
   const [sortKey, setSortKey] = useState<SortKey>("realizedProfitCents");
   const [sortDescending, setSortDescending] = useState(true);
   const [page, setPage] = useState(0);
+  // The full table starts collapsed so the section stays a summary, not a
+  // scroll page; the audit trail opens on demand.
+  const [tableOpen, setTableOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const rows = log.records.filter(
@@ -157,7 +160,19 @@ function TradeLedgerBody({ log }: { log: TradeLog }) {
 
       <ExpectedVsRealizedChart records={log.records} />
 
-      <div className="trade-controls" role="group" aria-label="Trade filters">
+      <button
+        type="button"
+        className={`trade-chip trade-chip--toggle ${tableOpen ? "is-active" : ""}`}
+        aria-expanded={tableOpen}
+        aria-controls="trade-table-panel"
+        onClick={() => setTableOpen((value) => !value)}
+      >
+        {tableOpen ? "Hide the per-trade table" : `Inspect the per-trade table (${filtered.length})`}
+      </button>
+
+      {tableOpen && (
+        <div id="trade-table-panel">
+          <div className="trade-controls" role="group" aria-label="Trade filters">
         {CLASSIFICATIONS.map((classification) => (
           <button
             key={classification}
@@ -216,26 +231,26 @@ function TradeLedgerBody({ log }: { log: TradeLog }) {
         </table>
       </div>
 
-      {pageCount > 1 && (
-        <nav className="trade-pagination" aria-label="Trade pages">
-          <button
-            type="button"
-            disabled={safePage === 0}
-            onClick={() => setPage(safePage - 1)}
-          >
-            Previous
-          </button>
-          <span>
-            Page {safePage + 1} / {pageCount}
-          </span>
-          <button
-            type="button"
-            disabled={safePage >= pageCount - 1}
-            onClick={() => setPage(safePage + 1)}
-          >
-            Next
-          </button>
-        </nav>
+          <nav className="trade-pagination" aria-label="Trade pages">
+            <button
+              type="button"
+              disabled={safePage === 0}
+              onClick={() => setPage(safePage - 1)}
+            >
+              Previous
+            </button>
+            <span>
+              Page {safePage + 1} / {pageCount}
+            </span>
+            <button
+              type="button"
+              disabled={safePage >= pageCount - 1}
+              onClick={() => setPage(safePage + 1)}
+            >
+              Next
+            </button>
+          </nav>
+        </div>
       )}
     </div>
   );

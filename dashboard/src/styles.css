@@ -1317,6 +1317,16 @@ footer a {
   margin: 0;
 }
 
+.trade-chip--toggle {
+  justify-self: start;
+  padding: 12px 20px;
+}
+
+.trade-chip--toggle.is-active:hover {
+  color: var(--paper);
+  background: var(--ink);
+}
+
 .trade-table th,
 .trade-table td {
   white-space: nowrap;

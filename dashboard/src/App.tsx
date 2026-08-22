@@ -46,7 +46,12 @@ export function App() {
       .then((history) => {
         if (history.length === 0) throw new Error("No published benchmark runs were found.");
         setRuns(history);
-        setSelectedId((current) => current || history[0].run.id);
+        // Runs recorded on this machine are the live evidence; prefer the
+        // newest one over archived published snapshots.
+        setSelectedId(
+          (current) =>
+            current || history.find((run) => run.run.source === "measured")?.run.id || history[0].run.id,
+        );
         setStatus("ready");
       })
       .catch((cause: unknown) => {
@@ -113,6 +118,15 @@ export function App() {
 
   const baseline = runs.find((run) => run.run.id !== selected.run.id) ?? selected;
   const verified = selected.verification;
+  // The newest locally recorded run is "the current run" for this machine;
+  // every other entry is history.
+  const currentRunId = runs.find((run) => run.run.source === "measured")?.run.id;
+  const runLabel = (run: RunSnapshot) =>
+    run.run.id === currentRunId
+      ? "Current run"
+      : run.run.source === "measured"
+        ? "Earlier measurement"
+        : "Archived snapshot";
 
   const downloadSnapshot = () => {
     const blob = new Blob([`${JSON.stringify(selected, null, 2)}\n`], { type: "application/json" });
@@ -156,7 +170,7 @@ export function App() {
               <select id="run-select" value={selected.run.id} onChange={(event) => setSelectedId(event.target.value)}>
                 {runs.map((run) => (
                   <option value={run.run.id} key={run.run.id}>
-                    {formatDate(run)} · {run.environment.label}
+                    {runLabel(run)} · {formatDate(run)} · {run.environment.label}
                   </option>
                 ))}
               </select>
@@ -335,7 +349,7 @@ export function App() {
                     <td>{compact(run.performance.throughputPerSecond)}/s</td>
                     <td>{nsToMicros(run.performance.latencyNs.p99).toFixed(3)} µs</td>
                     <td>{headroom(run).toFixed(0)}×</td>
-                    <td>{run.run.source === "published-snapshot" ? "Published report" : "Measured JSON"}</td>
+                    <td>{runLabel(run)}</td>
                   </tr>
                 ))}
               </tbody>
