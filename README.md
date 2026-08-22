@@ -210,7 +210,7 @@ Record a new reviewed benchmark candidate and append it to the local history:
 npm --prefix dashboard run record
 ```
 
-The command runs the release pipeline, writes a non-overwriting schema-versioned snapshot under `dashboard/public/data/runs/`, and updates the run index. Hardware-specific results are preserved as separate comparisons rather than combined into a misleading cross-host trend.
+The command runs the release pipeline, writes a non-overwriting schema-versioned snapshot under `dashboard/public/data/runs/`, records the per-trade accuracy ledger as a sibling `<id>.trades.jsonl` asset, and updates the run index (`tradesFile` is absent for pre-ledger runs, which the dashboard reports honestly). Hardware-specific results are preserved as separate comparisons rather than combined into a misleading cross-host trend.
 
 The dashboard builds to static assets for the `arbkit-dashboard` Cloudflare Worker. In Workers Builds, use `dashboard` as the root directory, `npm ci && npm run build` as the build command, and `npx wrangler deploy` as the deploy command.
 

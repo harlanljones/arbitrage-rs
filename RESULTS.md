@@ -3,7 +3,7 @@
 **Version:** 0.1.0  
 **Repository:** `https://github.com/harlanljones/arbkit`  
 **Live Interactive Dashboard:** `https://arbkit.harlanljones.com/`  
-**Test Dates:** August 19, 2026 (baseline); August 21, 2026 (Linux x86_64, earlier revision); August 21, 2026 (this run, commit `f9623ab`)  
+**Test Dates:** August 19, 2026 (baseline); August 21, 2026 (Linux x86_64, earlier revision); August 21, 2026 (commit `f9623ab`); August 22, 2026 (ledger-enabled run, commit `0b0306e`)  
 **Toolchain:** `rustc 1.97.1` (`aarch64-apple-darwin` baseline; `x86_64-unknown-linux-gnu` current)  
 **Build Profile:** `release` (`lto = "fat"`, `codegen-units = 1`, `panic = "abort"`)  
 
@@ -23,15 +23,24 @@ the detector/simulator logic changed, not because of host or workload
 differences — the same synthetic stream, replayed against today's code,
 deterministically reproduces the "current" figures below.
 
-| Metric | Apple Silicon baseline (200k ticks) | Linux x86_64, earlier revision (200k ticks) | Linux i7-14700K, current — `f9623ab` (2M ticks) |
-|---|---:|---:|---:|
-| Ingestion Throughput | 3,533,782 msg/sec | 6,347,554 msg/sec | 7,721,309 msg/sec |
-| Hot Loop Latency (p99) | 0.250 µs (250 ns) | 0.100 µs (100 ns) | 0.080 µs (80 ns) |
-| Hot Loop Latency (Median / p50) | 0.200 µs (200 ns) | 0.090 µs (90 ns) | 0.050 µs (50 ns) |
-| Measured Phantom Rate | 10.01% (1,001 bps) | 10.01% (1,001 bps) | 10.01% (1,001 bps) |
-| Paper-Trading Realized PnL | +$15,501.73 | +$15,501.73 | +$15,706.38 |
-| Realized Settlement ROI | +2.12% | +2.12% | +2.15% |
-| Workspace Test Verification | 114 / 114 passed | 114 / 114 passed | 159 / 159 passed |
+| Metric | Apple Silicon baseline (200k ticks) | Linux x86_64, earlier revision (200k ticks) | Linux i7-14700K, `f9623ab` (2M ticks) | Linux i7-14700K, ledger run — `0b0306e` (2M ticks) |
+|---|---:|---:|---:|---:|
+| Ingestion Throughput | 3,533,782 msg/sec | 6,347,554 msg/sec | 7,721,309 msg/sec | 7,629,443 msg/sec |
+| Hot Loop Latency (p99) | 0.250 µs (250 ns) | 0.100 µs (100 ns) | 0.080 µs (80 ns) | 0.100 µs (100 ns) |
+| Hot Loop Latency (Median / p50) | 0.200 µs (200 ns) | 0.090 µs (90 ns) | 0.050 µs (50 ns) | 0.050 µs (50 ns) |
+| Measured Phantom Rate | 10.01% (1,001 bps) | 10.01% (1,001 bps) | 10.01% (1,001 bps) | 10.01% (1,001 bps) |
+| Paper-Trading Realized PnL | +$15,501.73 | +$15,501.73 | +$15,706.38 | +$15,706.38 |
+| Realized Settlement ROI | +2.12% | +2.12% | +2.15% | +2.15% |
+| Workspace Test Verification | 114 / 114 passed | 114 / 114 passed | 159 / 159 passed | 159 / 159 passed |
+
+The August 22 column is the first **ledger-enabled** run: the pipeline now
+also emits a per-trade accuracy ledger (`*.trades.jsonl`, one record per
+detected-and-simulated signal), published beside the run snapshot and rendered
+in the dashboard's Trades section. Detection and simulation figures are
+identical to the `f9623ab` run because the synthetic stream is deterministic
+and the hot path is untouched by ledger capture — the p99 difference (80 ns →
+100 ns) is host scheduling noise of the same magnitude already documented in
+§3. See §7 for the per-trade reconciliation.
 
 The current run streams 2,000,000 synthetic events (the default workload
 size for `cargo run --example pipeline --release`) on the reference x86_64
@@ -195,3 +204,30 @@ running 14 tests in arbkit-sim (sim_tests) .................... passed
 ----------------------------------------------------------------------------
 Total: 159 passed, 0 failed, 0 ignored, 0 clippy warnings
 ```
+
+---
+
+## 7. Per-Trade Accuracy Ledger (August 22, 2026)
+
+The `0b0306e` run is the first recorded with ledger capture enabled: the
+pipeline writes one JSONL record per detected-and-simulated signal, pairing
+each engine signal event with its paper-trading execution report. The ledger
+is a static asset (`2026-08-22T005623-945Z-linux-x86_64-0b0306e.trades.jsonl`)
+published beside the run snapshot and rendered trade-by-trade in the
+dashboard's Trades section.
+
+Ledger contents and reconciliation against the aggregate simulation section:
+
+```
+Trades written:                        829 (header count matches line count)
+Profitable trades:                     746
+Classification:            746 proportional / 83 phantom / 0 clean / 0 brokenLeg
+Ledger realized PnL total:       1,570,638 cents (+$15,706.38)
+Simulation realized PnL total:   1,570,638 cents  -> reconciles exactly
+```
+
+Every money field in the ledger is the pipeline's own integer cents; every
+rate field its integer bps/ppm. Nothing is rounded, recomputed, or
+float-formatted between the engine, the JSONL file, and the dashboard.
+Pre-ledger runs (all snapshots before this one) show an honest "no trade log
+recorded for this run" state rather than synthesized rows.

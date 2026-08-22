@@ -9,6 +9,8 @@ export const RunIndexSchema = z.object({
     z.object({
       id: z.string().min(1),
       file: z.string().min(1),
+      // Absent for pre-ledger runs; consumers must handle absence.
+      tradesFile: z.string().min(1).optional(),
     }),
   ),
 });
@@ -94,6 +96,70 @@ export const RunSnapshotSchema = z.object({
 
 export type RunIndex = z.infer<typeof RunIndexSchema>;
 export type RunSnapshot = z.infer<typeof RunSnapshotSchema>;
+
+// ---------------------------------------------------------------------------
+// Per-trade accuracy ledger (ROADMAP-TRADE-LEDGER §2.2).
+//
+// These schemas mirror the Rust `TradeRecord` serialization exactly: money is
+// integer cents, rates are integer bps/ppm, and floats are rejected outright
+// so no display path can silently recompute or round a pessimistic number.
+// ---------------------------------------------------------------------------
+
+const moneyCents = z.number().int();
+
+export const TradeLogHeaderSchema = z.object({
+  schemaVersion: z.literal(1),
+  kind: z.literal("arbkit-trades"),
+  runId: z.string().min(1),
+  tradeCount: whole,
+  recordedAtEpochMs: whole.optional(),
+});
+
+export const LegStatusSchema = z.union([
+  z.literal("filled"),
+  z.object({
+    partiallyFilled: z.object({
+      filledCents: whole,
+      unfilledCents: whole,
+      reason: z.string().min(1),
+    }),
+  }),
+  z.object({
+    unfilled: z.string().min(1),
+  }),
+]);
+
+export const TradeLegSchema = z.object({
+  venueLabel: z.string().min(1),
+  outcomeLabel: z.string().min(1),
+  status: LegStatusSchema,
+  requestedStakeCents: moneyCents,
+  filledStakeCents: whole,
+  netPayoutCents: moneyCents,
+});
+
+export const TradeRecordSchema = z.object({
+  seq: whole,
+  detectionTimestampNs: whole,
+  latencyNs: whole,
+  marketLabel: z.string().min(1),
+  edgeBps: whole,
+  overroundPpm: whole,
+  requestedStakeCents: moneyCents,
+  expectedProfitCents: moneyCents,
+  worstCaseProfitCents: moneyCents,
+  realizedProfitCents: moneyCents,
+  slippageCents: moneyCents,
+  feesPaidCents: whole,
+  fillRatioBps: whole,
+  classification: z.enum(["clean", "proportional", "phantom", "brokenLeg"]),
+  chased: z.boolean(),
+  legs: z.array(TradeLegSchema).max(4),
+});
+
+export type TradeLogHeader = z.infer<typeof TradeLogHeaderSchema>;
+export type TradeRecord = z.infer<typeof TradeRecordSchema>;
+export type TradeLeg = z.infer<typeof TradeLegSchema>;
 
 export async function loadRunHistory(): Promise<RunSnapshot[]> {
   const dataRoot = `${import.meta.env.BASE_URL}data/runs/`;

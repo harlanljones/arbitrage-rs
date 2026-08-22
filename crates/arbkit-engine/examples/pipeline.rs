@@ -4,12 +4,12 @@
 //! routes them through the zero-allocation hot loop engine, measures sub-microsecond
 //! latency distributions, and evaluates order executions through the paper trading simulator.
 
-use arbkit_core::{Fee, Leg, Level, Prob};
+use arbkit_core::{Fee, Leg, Level, MarketKind, Prob};
 use arbkit_engine::{spsc_ring, Engine, FeedEventSlot, MarketConfig, SignalEvent, SignalEventSlot};
 use arbkit_feed::{FeedEvent, TradeSide};
 use arbkit_match::team::{parse_matchup, Sport};
 use arbkit_match::{CanonicalRegistry, VenueRegistry};
-use arbkit_sim::{LatencyModel, LatencyProfile, Simulator};
+use arbkit_sim::{ExecutionReport, LatencyModel, LatencyProfile, Simulator};
 use serde::Serialize;
 use std::env;
 use std::fs;
@@ -19,6 +19,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+
+#[path = "trades_ledger/mod.rs"]
+mod trades_ledger;
+
+use trades_ledger::{
+    build_trade_record, write_trades_file, LabelResolver, TradeRecord, TradesHeader, TRADES_KIND,
+    TRADES_SCHEMA_VERSION,
+};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -118,6 +126,7 @@ struct SimulationMetrics {
 
 struct PipelineArgs {
     json: Option<PathBuf>,
+    trades: Option<PathBuf>,
     ticks: usize,
 }
 
@@ -125,6 +134,7 @@ fn parse_args() -> PipelineArgs {
     const DEFAULT_TICKS: usize = 2_000_000;
     let mut args = env::args().skip(1);
     let mut output = None;
+    let mut trades = None;
     let mut ticks = DEFAULT_TICKS;
     while let Some(arg) = args.next() {
         match arg.as_str() {
@@ -134,6 +144,13 @@ fn parse_args() -> PipelineArgs {
                     std::process::exit(2);
                 });
                 output = Some(PathBuf::from(path));
+            }
+            "--trades" => {
+                let path = args.next().unwrap_or_else(|| {
+                    eprintln!("error: --trades requires an output path");
+                    std::process::exit(2);
+                });
+                trades = Some(PathBuf::from(path));
             }
             "--ticks" => {
                 let raw = args.next().unwrap_or_else(|| {
@@ -153,9 +170,15 @@ fn parse_args() -> PipelineArgs {
                 };
             }
             "--help" | "-h" => {
-                println!("Usage: pipeline [--ticks <n>] [--json <path>]");
+                println!("Usage: pipeline [--ticks <n>] [--json <path>] [--trades <path>]");
                 println!("Streams {DEFAULT_TICKS} synthetic feed events through the pipeline by default;");
-                println!("--ticks overrides the count. Optionally writes a schema-versioned JSON report.");
+                println!(
+                    "--ticks overrides the count. Optionally writes a schema-versioned JSON report"
+                );
+                println!("and a per-trade accuracy ledger (JSONL). The trades path defaults to a");
+                println!(
+                    "sibling of the --json path with a .trades.jsonl suffix, else trades.jsonl."
+                );
                 std::process::exit(0);
             }
             _ => {
@@ -166,6 +189,7 @@ fn parse_args() -> PipelineArgs {
     }
     PipelineArgs {
         json: output,
+        trades,
         ticks,
     }
 }
@@ -177,6 +201,45 @@ fn command_output(program: &str, args: &[&str]) -> Option<String> {
     }
     let value = String::from_utf8(output.stdout).ok()?;
     Some(value.trim().to_owned()).filter(|value| !value.is_empty())
+}
+
+/// Resolves interned engine ids to human-readable labels through the match
+/// registries built at startup. Lookup misses fall back to `"market:<id>"`-
+/// style strings rather than panicking — ledger emission must stay total.
+struct PipelineLabels<'a> {
+    registry: &'a CanonicalRegistry,
+    venues: &'a VenueRegistry,
+}
+
+impl LabelResolver for PipelineLabels<'_> {
+    fn market_label(&self, market_id: u32) -> String {
+        let Some(market) = self.registry.get_market(market_id) else {
+            return format!("market:{market_id}");
+        };
+        let kind = match market.kind {
+            MarketKind::Moneyline => "moneyline".to_string(),
+            MarketKind::Spread(line) => format!("spread {line:?}"),
+            MarketKind::Total(line) => format!("total {line:?}"),
+        };
+        match self.registry.get_event(market.event_id) {
+            Some(event) => format!("{} · {}", event.name, kind),
+            None => kind,
+        }
+    }
+
+    fn venue_label(&self, venue_id: u16) -> String {
+        self.venues
+            .name_of(venue_id)
+            .map(str::to_string)
+            .unwrap_or_else(|| format!("venue:{venue_id}"))
+    }
+
+    fn outcome_label(&self, outcome_id: u32) -> String {
+        self.registry
+            .get_outcome(outcome_id)
+            .map(|outcome| outcome.name.clone())
+            .unwrap_or_else(|| format!("outcome:{outcome_id}"))
+    }
 }
 
 fn write_report(path: &Path, report: &PipelineReport) -> Result<(), String> {
@@ -199,6 +262,7 @@ fn write_report(path: &Path, report: &PipelineReport) -> Result<(), String> {
 fn main() {
     let PipelineArgs {
         json: json_path,
+        trades: trades_flag,
         ticks: num_ticks,
     } = parse_args();
     println!("========================================================================");
@@ -573,6 +637,8 @@ fn main() {
 
     // 7. Run Paper Trading Simulation on emitted signals
     println!("Simulating order execution against market depth & latency...");
+    let mut trade_pairs: Vec<(SignalEvent, ExecutionReport)> =
+        Vec::with_capacity(signal_collector.len());
     for (idx, signal_event) in signal_collector.iter().enumerate() {
         let signal: SignalEvent = *signal_event;
         let (p_lal, p_bos) = if idx % 10 == 0 {
@@ -610,20 +676,104 @@ fn main() {
         let arrival_prices = [p_lal, p_bos];
         let arrival_depths = [80_000, 50_000];
 
-        let _ = simulator.simulate_with_quotes(
+        if let Ok(report) = simulator.simulate_with_quotes(
             signal.ingest_timestamp_ns,
             &signal.signal,
             &legs,
             &arrival_prices,
             &arrival_depths,
-        );
+        ) {
+            trade_pairs.push((*signal_event, report));
+        }
     }
 
     let sim_stats = simulator.stats();
 
     let service_summary = service_rx.recv().unwrap();
 
-    // 8. Output Detailed Results
+    // Run identity is computed once so the JSON report and the trades header
+    // always agree on `runId`.
+    let recorded_at_epoch_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system clock is before Unix epoch")
+        .as_millis();
+    let git_commit = command_output("git", &["rev-parse", "--short", "HEAD"]);
+    let run_id = format!(
+        "{}-{}-{}-{}",
+        recorded_at_epoch_ms,
+        env::consts::OS,
+        env::consts::ARCH,
+        git_commit.as_deref().unwrap_or("working-tree")
+    );
+
+    // 8. Per-trade accuracy ledger
+    //
+    // Pure post-consumption work: pairs already-collected signals with their
+    // simulation reports and serializes them. Nothing here touches the hot
+    // path, and a failed write is reported to stderr without aborting — a
+    // lost ledger is a reporting gap, not a reason to discard a finished run.
+    let venues = VenueRegistry::new();
+    let labels = PipelineLabels {
+        registry: &registry,
+        venues: &venues,
+    };
+    let trade_records: Vec<TradeRecord> = trade_pairs
+        .iter()
+        .enumerate()
+        .map(|(seq, (signal_event, report))| {
+            build_trade_record(seq as u64, signal_event, report, &labels)
+        })
+        .collect();
+
+    let trades_path = trades_flag.unwrap_or_else(|| {
+        json_path
+            .as_deref()
+            .map(|json| json.with_extension("trades.jsonl"))
+            .unwrap_or_else(|| PathBuf::from("trades.jsonl"))
+    });
+    let trades_header = TradesHeader {
+        schema_version: TRADES_SCHEMA_VERSION,
+        kind: TRADES_KIND,
+        run_id: run_id.clone(),
+        trade_count: trade_records.len(),
+        recorded_at_epoch_ms: Some(recorded_at_epoch_ms),
+    };
+    match write_trades_file(&trades_path, &trades_header, &trade_records) {
+        Ok(()) => {
+            let hit_count = trade_records
+                .iter()
+                .filter(|record| record.realized_profit_cents > 0)
+                .count();
+            let realized_total: i64 = trade_records
+                .iter()
+                .map(|record| record.realized_profit_cents)
+                .sum();
+            println!(
+                "Trade Ledger Written:         {:>12} trades to {}",
+                trade_records.len(),
+                trades_path.display()
+            );
+            println!(
+                "  Profitable Trades:          {:>12} · realized PnL {} cents (${:.2})",
+                hit_count,
+                realized_total,
+                realized_total as f64 / 100.0
+            );
+            // Reconciliation guard: the ledger must agree with the aggregate
+            // simulation section, or the proof it carries is suspect.
+            if realized_total != sim_stats.total_realized_profit_cents {
+                eprintln!(
+                    "warning: trade ledger realized PnL ({realized_total}) does not reconcile with simulation totals ({})",
+                    sim_stats.total_realized_profit_cents
+                );
+            }
+        }
+        Err(error) => {
+            eprintln!("warning: could not write trade ledger: {error}");
+        }
+    }
+
+    // 9. Output Detailed Results
     println!();
     println!("========================================================================");
     println!("                        PIPELINE RESULTS & ANALYSIS                     ");
@@ -768,18 +918,6 @@ fn main() {
     println!("========================================================================");
 
     if let Some(path) = json_path {
-        let recorded_at_epoch_ms = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("system clock is before Unix epoch")
-            .as_millis();
-        let git_commit = command_output("git", &["rev-parse", "--short", "HEAD"]);
-        let id = format!(
-            "{}-{}-{}-{}",
-            recorded_at_epoch_ms,
-            env::consts::OS,
-            env::consts::ARCH,
-            git_commit.as_deref().unwrap_or("working-tree")
-        );
         let sample = signal_collector.first().map(|signal| SampleSignal {
             profit_bps: signal.signal.profit_bps,
             total_stake_cents: signal.signal.total_stake,
@@ -788,7 +926,7 @@ fn main() {
         let report = PipelineReport {
             schema_version: 1,
             run: RunMetadata {
-                id,
+                id: run_id,
                 recorded_at_epoch_ms,
                 source: "measured",
                 project_version: env!("CARGO_PKG_VERSION"),

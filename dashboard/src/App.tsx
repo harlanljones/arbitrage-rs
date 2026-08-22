@@ -11,6 +11,7 @@ import {
   throughputDelta,
 } from "./data/metrics";
 import { loadRunHistory, type RunSnapshot } from "./data/schema";
+import { loadTradeLog, type TradeLog } from "./data/trades";
 
 const LatencyProfileChart = lazy(() =>
   import("./components/Charts").then((module) => ({ default: module.LatencyProfileChart })),
@@ -20,6 +21,9 @@ const ThroughputChart = lazy(() =>
 );
 const VerificationChart = lazy(() =>
   import("./components/Charts").then((module) => ({ default: module.VerificationChart })),
+);
+const TradeLedger = lazy(() =>
+  import("./components/TradeLedger").then((module) => ({ default: module.TradeLedger })),
 );
 
 function ChartFallback() {
@@ -31,6 +35,9 @@ export function App() {
   const [selectedId, setSelectedId] = useState("");
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
+  const [tradeLog, setTradeLog] = useState<TradeLog | null>(null);
+  const [tradeStatus, setTradeStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [tradeError, setTradeError] = useState("");
 
   const refresh = () => {
     setStatus("loading");
@@ -54,6 +61,34 @@ export function App() {
     () => runs.find((run) => run.run.id === selectedId) ?? runs[0],
     [runs, selectedId],
   );
+
+  // Trade logs are per-run artifacts: reset and refetch whenever the selected
+  // run changes. A failure here must not block the rest of the page — it is
+  // contained inside the trades section.
+  const selectedRunId = selected?.run.id;
+  useEffect(() => {
+    if (!selectedRunId) return;
+    let cancelled = false;
+    setTradeStatus("loading");
+    setTradeError("");
+    setTradeLog(null);
+    // The loader only reads `run.run.id`; the id alone identifies the file.
+    const target = { run: { id: selectedRunId } } as RunSnapshot;
+    loadTradeLog(target)
+      .then((log) => {
+        if (cancelled) return;
+        setTradeLog(log);
+        setTradeStatus("ready");
+      })
+      .catch((cause: unknown) => {
+        if (cancelled) return;
+        setTradeError(cause instanceof Error ? cause.message : "The trade log could not be loaded.");
+        setTradeStatus("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedRunId]);
 
   if (status === "loading") {
     return (
@@ -103,6 +138,7 @@ export function App() {
         <nav aria-label="Results sections">
           <a href="#performance">Performance</a>
           <a href="#execution">Execution</a>
+          <a href="#trades">Trades</a>
           <a href="#verification">Verification</a>
           <a href="#history">History</a>
         </nav>
@@ -227,6 +263,24 @@ export function App() {
           <p className="method-note">
             These are deterministic paper-trading results from a synthetic market stream. They do not represent live trading, future returns, or an order-placement system.
           </p>
+        </section>
+
+        <section className="section-block trades-section" id="trades" aria-labelledby="trades-heading">
+          <div className="section-intro">
+            <h2 id="trades-heading">Every trade carries its own receipt.</h2>
+            <p>
+              Each detected signal is persisted beside its simulated outcome, so expected-vs-realized
+              PnL is auditable at trade granularity instead of trusting aggregate counters. Numbers
+              are the pipeline's own pessimistic integers, formatted but never recomputed.
+            </p>
+          </div>
+          <Suspense fallback={<ChartFallback />}>
+            {tradeStatus === "loading" ? (
+              <div className="chart-fallback" role="status">Opening the trade log…</div>
+            ) : (
+              <TradeLedger log={tradeLog} error={tradeStatus === "error" ? tradeError : undefined} />
+            )}
+          </Suspense>
         </section>
 
         <section className="section-block verification-section" id="verification" aria-labelledby="verification-heading">

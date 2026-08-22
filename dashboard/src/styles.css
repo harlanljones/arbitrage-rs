@@ -1237,3 +1237,157 @@ footer a {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Trade ledger (per-trade accuracy proof)                             */
+/* ------------------------------------------------------------------ */
+
+.trades-section .section-intro {
+  max-width: 62ch;
+}
+
+.trade-ledger {
+  display: grid;
+  gap: 28px;
+}
+
+.trade-summary {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin: 0;
+}
+
+.trade-summary strong {
+  font-family: var(--mono);
+  font-size: 0.92rem;
+}
+
+.chart-frame--trades {
+  height: 340px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.trade-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.trade-chip {
+  padding: 5px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: transparent;
+}
+
+.trade-chip:hover {
+  color: var(--ink);
+  background: var(--paper-deep);
+}
+
+.trade-chip.is-active {
+  border-color: var(--ink);
+  color: var(--paper);
+  background: var(--ink);
+}
+
+.trade-chip.is-active:hover {
+  color: var(--ink);
+  background: var(--green-soft);
+}
+
+.trade-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  margin-left: auto;
+}
+
+.trade-count {
+  margin: 0;
+}
+
+.trade-table th,
+.trade-table td {
+  white-space: nowrap;
+}
+
+.trade-table tbody tr.is-loss td,
+.trade-table tbody tr.is-loss th {
+  color: var(--copper);
+}
+
+.trade-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 6px;
+}
+
+.trade-badge--clean {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.trade-badge--proportional {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.trade-badge--phantom,
+.trade-badge--brokenLeg {
+  border-color: var(--copper);
+  color: var(--copper);
+}
+
+.trade-badge--chased {
+  border-style: dashed;
+}
+
+.trade-legs-row td {
+  white-space: normal;
+  background: var(--paper-deep);
+}
+
+.trade-legs {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+
+.trade-legs dt {
+  font-weight: 700;
+}
+
+.trade-legs dd {
+  margin: 2px 0 0;
+  color: var(--muted);
+}
+
+.trade-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+
+.trade-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
