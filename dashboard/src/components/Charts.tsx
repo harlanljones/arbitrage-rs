@@ -66,7 +66,7 @@ export function LatencyProfileChart({ selected, runs }: RunsProps) {
               contentStyle={tooltipStyle}
               formatter={(value) => [`${nsToMicros(Number(value)).toFixed(3)} µs`]}
             />
-            <Legend verticalAlign="top" align="right" height={34} />
+            <Legend iconType="square" iconSize={9} verticalAlign="top" align="right" height={34} />
             <ReferenceLine
               y={selected.performance.targetP99Ns}
               stroke={COPPER}
@@ -149,6 +149,27 @@ export function ThroughputChart({ selected, runs }: RunsProps) {
         </ResponsiveContainer>
       </div>
       <figcaption>Host-to-host comparison, not a same-machine regression claim. Higher is better.</figcaption>
+      <details className="data-table">
+        <summary>View throughput data table</summary>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Environment</th>
+              <th scope="col">Updates per second</th>
+              <th scope="col">Selected</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row) => (
+              <tr key={row.id}>
+                <th scope="row">{row.name}</th>
+                <td>{Number(row.value).toLocaleString()}</td>
+                <td>{row.selected ? "Selected" : ""}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </details>
     </figure>
   );
 }

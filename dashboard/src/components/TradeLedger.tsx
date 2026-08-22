@@ -29,6 +29,13 @@ import { tradeMetrics } from "../data/tradeMetrics";
 const CLASSIFICATIONS = ["clean", "proportional", "phantom", "brokenLeg"] as const;
 type Classification = (typeof CLASSIFICATIONS)[number];
 
+const CLASSIFICATION_LABELS: Record<Classification, string> = {
+  clean: "Clean",
+  proportional: "Proportional",
+  phantom: "Phantom",
+  brokenLeg: "Broken leg",
+};
+
 const PAGE_SIZE = 200;
 
 const GREEN = "#2f6d43";
@@ -126,7 +133,7 @@ function TradeLedgerBody({ log }: { log: TradeLog }) {
 
   return (
     <div className="trade-ledger">
-      <div className="financial-ledger trade-summary" aria-label="Trade accuracy summary">
+      <div className="financial-ledger trade-summary" role="group" aria-label="Trade accuracy summary">
         <div>
           <span>Hit rate</span>
           <strong>{percent(metrics.hitRateBps)}</strong>
@@ -144,10 +151,7 @@ function TradeLedgerBody({ log }: { log: TradeLog }) {
         <div>
           <span>Phantom rate</span>
           <strong>{percent(metrics.phantomRateBps)}</strong>
-        </div>
-        <div>
-          <span>Clean share</span>
-          <strong>{percent(metrics.cleanShareBps)}</strong>
+          <small>{percent(metrics.cleanShareBps)} clean share</small>
         </div>
       </div>
 
@@ -162,20 +166,20 @@ function TradeLedgerBody({ log }: { log: TradeLog }) {
             aria-pressed={activeClasses.has(classification)}
             onClick={() => toggleClass(classification)}
           >
-            {classification}
+            {CLASSIFICATION_LABELS[classification]}
           </button>
         ))}
-        <label className="trade-toggle">
-          <input
-            type="checkbox"
-            checked={profitableOnly}
-            onChange={(event) => {
-              setPage(0);
-              setProfitableOnly(event.target.checked);
-            }}
-          />
+        <button
+          type="button"
+          className={`trade-chip ${profitableOnly ? "is-active" : ""}`}
+          aria-pressed={profitableOnly}
+          onClick={() => {
+            setPage(0);
+            setProfitableOnly((value) => !value);
+          }}
+        >
           Profitable only
-        </label>
+        </button>
       </div>
 
       <p className="method-note trade-count" aria-live="polite">
@@ -198,7 +202,7 @@ function TradeLedgerBody({ log }: { log: TradeLog }) {
                 <button type="button" onClick={() => toggleSort("realizedProfitCents")}>Realized</button>
               </th>
               <th scope="col" aria-sort={sortHeader(sortKey, sortDescending, "deltaCents")}>
-                <button type="button" onClick={() => toggleSort("deltaCents")}>Δ</button>
+                <button type="button" onClick={() => toggleSort("deltaCents")} aria-label="Delta, realized minus expected">Δ</button>
               </th>
               <th scope="col">Class</th>
               <th scope="col">Detail</th>
@@ -257,10 +261,10 @@ function TradeRow({ record }: { record: TradeRecord }) {
         <td>{money(record.realizedProfitCents)}</td>
         <td>{delta >= 0 ? "+" : ""}{money(delta).replace("$-", "-$")}</td>
         <td>
-          <span className={`trade-badge trade-badge--${record.classification}`}>
-            {record.classification}
+          <span className={`trade-badge trade-badge--${record.classification}`} data-classification={record.classification}>
+            {CLASSIFICATION_LABELS[record.classification]}
           </span>
-          {record.chased && <span className="trade-badge trade-badge--chased">chased</span>}
+          {record.chased && <span className="trade-badge trade-badge--chased">Chased</span>}
         </td>
         <td>
           <button
@@ -375,6 +379,27 @@ function ExpectedVsRealizedChart({ records }: { records: TradeRecord[] }) {
         Each point is one trade: below the diagonal means the realized outcome fell short of the
         fee-adjusted detection view; below zero means the trade lost money.
       </figcaption>
+      <details className="data-table">
+        <summary>View expected-vs-realized data table</summary>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Trade #</th>
+              <th scope="col">Expected (cents)</th>
+              <th scope="col">Realized (cents)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {records.map((record) => (
+              <tr key={record.seq}>
+                <th scope="row">{record.seq}</th>
+                <td>{record.expectedProfitCents.toLocaleString()}</td>
+                <td>{record.realizedProfitCents.toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </details>
     </figure>
   );
 }

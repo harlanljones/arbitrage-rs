@@ -169,7 +169,7 @@ export function App() {
             <p className="hero-thesis">
               The detector clears its in-process latency budget before the market data has time to blink.
             </p>
-            <div className="hero-facts" aria-label="Latency result summary">
+            <div className="hero-facts" role="group" aria-label="Latency result summary">
               <div><strong>{nsToMicros(selected.performance.targetP99Ns).toFixed(3)} µs</strong><span>budget</span></div>
               <div><strong>{headroom(selected).toFixed(0)}×</strong><span>headroom</span></div>
               <div><strong>{selected.performance.latencyNs.max} ns</strong><span>maximum observed</span></div>
@@ -253,7 +253,7 @@ export function App() {
             </div>
           </div>
 
-          <div className="financial-ledger" aria-label="Paper trading financial ledger">
+          <div className="financial-ledger" role="group" aria-label="Paper trading financial ledger">
             <div><span>Cumulative stake</span><strong>{money(selected.simulation.filledStakeCents)}</strong></div>
             <div><span>Venue fees paid</span><strong>{money(selected.simulation.feesPaidCents)}</strong></div>
             <div className="financial-ledger__result"><span>Realized worst-case profit</span><strong>{money(selected.simulation.realizedProfitCents)}</strong></div>

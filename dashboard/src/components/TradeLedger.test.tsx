@@ -108,8 +108,10 @@ describe("TradeLedger summary and table", () => {
     render(<TradeLedger log={log} />);
     const metrics = tradeMetrics(log.records);
     expect(metrics.hitRateBps).toBe(5_000);
-    // Hit rate, phantom rate, and clean share all land on 50.00% here.
-    expect(screen.getAllByText("50.00%")).toHaveLength(3);
+    // Hit rate and phantom rate land on 50.00%; clean share is folded into
+    // the phantom card as a qualifier.
+    expect(screen.getAllByText("50.00%")).toHaveLength(2);
+    expect(screen.getByText(/50\.00% clean share/)).toBeInTheDocument();
     // expected total 450c -> $4.50 ; realized total -4750c -> -$47.50
     expect(screen.getByText("$4.50 → -$47.50")).toBeInTheDocument();
   });
@@ -119,23 +121,30 @@ describe("TradeLedger summary and table", () => {
     expect(screen.getByText(/showing 2 of 2/i)).toBeInTheDocument();
 
     // Removing the phantom chip leaves only the profitable clean trade.
-    fireEvent.click(screen.getByRole("button", { name: "phantom" }));
+    fireEvent.click(screen.getByRole("button", { name: "Phantom" }));
     expect(screen.getByText(/showing 1 of 1 matching trades \(2 total\)/i)).toBeInTheDocument();
-    const table = screen.getByRole("table");
+    // The chart's data table also has role="table"; scope to the trade table.
+    const table = document.querySelector("table.trade-table") as HTMLElement;
     expect(table).toHaveTextContent("300 bps");
     expect(table).not.toHaveTextContent("-$50.00");
   });
 
   it("toggles profitable-only and hides losing trades", async () => {
     render(<TradeLedger log={log} />);
-    fireEvent.click(screen.getByRole("checkbox"));
+    const chip = screen.getByRole("button", { name: "Profitable only" });
+    expect(chip).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(chip);
+    expect(chip).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText(/showing 1 of 1 matching trades \(2 total\)/i)).toBeInTheDocument();
     expect(screen.queryByText("-$50.00")).not.toBeInTheDocument();
   });
 
   it("sorts by realized profit ascending on second click", async () => {
     render(<TradeLedger log={log} />);
-    const rows = () => screen.getAllByRole("row").slice(1).map((row) => row.textContent ?? "");
+    const tradeTable = document.querySelector("table.trade-table") as HTMLElement;
+    // The chart's data table also contributes rows; scope to the trade table.
+    const rows = () =>
+      Array.from(tradeTable.querySelectorAll("tbody tr")).map((row) => row.textContent ?? "");
 
     fireEvent.click(screen.getByRole("button", { name: "Realized" })); // descending first click
     expect(rows()[0]).toContain("-$50.00");

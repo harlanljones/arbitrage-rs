@@ -137,7 +137,7 @@ a:hover {
 .binder-rail strong {
   margin-top: 64px;
   font-family: var(--mono);
-  font-size: 0.64rem;
+  font-size: 0.72rem;
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.2em;
@@ -361,7 +361,7 @@ a:hover {
 .budget-ruler figcaption {
   color: var(--muted);
   font-family: var(--mono);
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -438,7 +438,7 @@ a:hover {
 .evidence-rail span {
   color: var(--muted);
   font-family: var(--mono);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
@@ -699,7 +699,7 @@ details summary {
 .financial-ledger span {
   color: var(--muted);
   font-family: var(--mono);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -780,8 +780,20 @@ details summary {
 }
 
 .history-table-wrap {
+  position: relative;
   overflow-x: auto;
   border-block: 1px solid var(--ink);
+}
+
+.history-table-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 28px;
+  background: linear-gradient(to right, transparent, var(--paper));
+  pointer-events: none;
 }
 
 .history-table {
@@ -801,7 +813,7 @@ details summary {
 .history-table thead th {
   color: var(--muted);
   font-family: var(--mono);
-  font-size: 0.67rem;
+  font-size: 0.72rem;
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1033,14 +1045,14 @@ footer a {
   }
 
   .scope-stamp strong {
-    font-size: 0.66rem;
+    font-size: 0.7rem;
   }
 
   .scope-stamp span {
     display: block;
-    max-width: 18ch;
+    max-width: 22ch;
     margin-left: auto;
-    font-size: 0.62rem;
+    font-size: 0.7rem;
     line-height: 1.25;
   }
 
@@ -1051,7 +1063,7 @@ footer a {
   }
 
   .hero-main {
-    min-height: 620px;
+    min-height: auto;
     padding: 28px 20px 42px;
   }
 
@@ -1275,9 +1287,9 @@ footer a {
 }
 
 .trade-chip {
-  padding: 5px 14px;
+  padding: 10px 16px;
   border: 1px solid var(--rule);
-  border-radius: 999px;
+  border-radius: 0;
   font-family: var(--mono);
   font-size: 0.78rem;
   letter-spacing: 0.04em;
@@ -1301,14 +1313,6 @@ footer a {
   background: var(--green-soft);
 }
 
-.trade-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
-  margin-left: auto;
-}
-
 .trade-count {
   margin: 0;
 }
@@ -1325,9 +1329,9 @@ footer a {
 
 .trade-badge {
   display: inline-block;
-  padding: 2px 9px;
+  padding: 4px 10px;
   border: 1px solid var(--rule);
-  border-radius: 999px;
+  border-radius: 0;
   font-family: var(--mono);
   font-size: 0.7rem;
   letter-spacing: 0.05em;

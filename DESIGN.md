@@ -38,7 +38,7 @@ typography:
     lineHeight: 1.65
   label:
     fontFamily: "IBM Plex Mono, monospace"
-    fontSize: "0.68rem"
+    fontSize: "0.72rem"
     fontWeight: 400
     lineHeight: 1
     letterSpacing: "0.1em"
@@ -145,7 +145,7 @@ The palette is a restrained ledger field: warm paper and near-black carbon carry
 - **Headline** (480, fluid 2.65rem–5.25rem, 0.96 line-height): Leads major evidence sections with tight, balanced editorial lines.
 - **Title** (520, fluid 2rem–3.25rem, 1 line-height): Carries evidence-rail figures and supporting measurements.
 - **Body** (400, 1rem, 1.65 line-height): Explains methodology and limitations, generally capped near 68 characters per line.
-- **Label** (400, 0.68rem, 0.1em letter-spacing, uppercase): Names evidence fields and table columns without competing with results.
+- **Label** (400, 0.72rem floor, 0.1em letter-spacing, uppercase): Names evidence fields and table columns without competing with results.
 - **Data** (400, 0.76rem, 1.5 line-height): Serves controls, tables, chart annotations, and metadata.
 
 ### Named Rules
