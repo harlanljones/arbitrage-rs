@@ -25,6 +25,15 @@ pub struct MarketConfig {
     pub venue_fees: [Fee; MAX_VENUES],
     /// Per-venue stake increments in cents (e.g. 1 cent or contract price).
     pub venue_increments: [Cents; MAX_VENUES],
+    /// Per-venue share of resting depth expected to survive transit to the
+    /// venue, in basis points (`10_000` = untouched). Detection sizes against
+    /// the discounted figure so a signal never requests more than the sim's
+    /// fill model will actually honor.
+    pub venue_survival_bps: [u32; MAX_VENUES],
+    /// Minimum nanoseconds between two emitted signals for this market
+    /// (`0` = emit on every detection). Duplicate emissions of an unchanged
+    /// edge within the window are suppressed at emission time.
+    pub signal_cooldown_ns: u64,
     /// Maximum stake budget in cents evaluated during detection.
     pub budget: Cents,
     /// Whether this market is currently active and eligible for detection.
@@ -37,6 +46,8 @@ impl Default for MarketConfig {
             outcome_count: 2,
             venue_fees: [Fee::None; MAX_VENUES],
             venue_increments: [1; MAX_VENUES],
+            venue_survival_bps: [10_000; MAX_VENUES],
+            signal_cooldown_ns: 0,
             budget: 100_000,
             active: false,
         }
@@ -48,6 +59,17 @@ impl Default for MarketConfig {
 pub struct EngineSlab {
     books: Vec<OutcomeBook>,
     configs: Vec<MarketConfig>,
+    /// Emission-time clock reading of the last emitted signal, per market.
+    ///
+    /// Runtime state rather than a `MarketConfig` field: configs are `Copy`
+    /// values overwritten wholesale by [`EngineSlab::register_market`], while
+    /// the cooldown bookkeeping must survive re-registration untouched.
+    ///
+    /// A slot of `0` means the market has never emitted, and always admits:
+    /// a fresh market must not wait out a window it never opened. Should an
+    /// emit clock ever legitimately read exactly `0`, the failure direction
+    /// is safe — one extra emission, never a lost edge.
+    last_emit_ns: Vec<u64>,
     max_markets: usize,
 }
 
@@ -68,6 +90,7 @@ impl EngineSlab {
         Self {
             books,
             configs,
+            last_emit_ns: vec![0; max_markets],
             max_markets,
         }
     }
@@ -162,6 +185,38 @@ impl EngineSlab {
         self.max_markets
     }
 
+    /// Returns `true` when a signal for `market_id` may be emitted at
+    /// `now_ns` under the market's cooldown, i.e. when no signal was emitted
+    /// within the configured window. A disabled cooldown (`0`) always admits.
+    ///
+    /// This only *reads* the gate; [`EngineSlab::note_emit`] records the
+    /// emission afterwards so a suppressed attempt cannot extend its own
+    /// suppression window.
+    #[inline]
+    pub fn emit_admitted(&self, market_id: MarketId, now_ns: u64) -> bool {
+        let m = market_id as usize;
+        if m >= self.max_markets {
+            return false;
+        }
+        let cooldown = self.configs[m].signal_cooldown_ns;
+        if cooldown == 0 {
+            return true;
+        }
+        let last = self.last_emit_ns[m];
+        !(last != 0 && now_ns.saturating_sub(last) < cooldown)
+    }
+
+    /// Records that a signal for `market_id` was emitted at `now_ns`,
+    /// starting (or restarting) its cooldown window. A `0` clock reading
+    /// leaves the "never emitted" marker in place, which admits.
+    #[inline]
+    pub fn note_emit(&mut self, market_id: MarketId, now_ns: u64) {
+        let m = market_id as usize;
+        if m < self.max_markets && now_ns != 0 {
+            self.last_emit_ns[m] = now_ns;
+        }
+    }
+
     /// Resets all books to empty/stale state and deactivates configs.
     pub fn reset(&mut self) {
         for book in &mut self.books {
@@ -169,6 +224,9 @@ impl EngineSlab {
         }
         for config in &mut self.configs {
             *config = MarketConfig::default();
+        }
+        for slot in &mut self.last_emit_ns {
+            *slot = 0;
         }
     }
 }
@@ -217,5 +275,45 @@ mod tests {
 
         let config = MarketConfig::default();
         assert!(slab.register_market(4, config).is_err());
+    }
+
+    #[test]
+    fn test_emit_cooldown_gate_and_reset() {
+        let mut slab = EngineSlab::new(4);
+        let config = MarketConfig {
+            active: true,
+            signal_cooldown_ns: 500,
+            ..Default::default()
+        };
+        slab.register_market(0, config).unwrap();
+
+        // Disabled cooldown (default config) always admits.
+        assert!(slab.emit_admitted(1, 10_000));
+
+        // First emission is always admitted; it opens the window.
+        assert!(slab.emit_admitted(0, 1_000));
+        slab.note_emit(0, 1_000);
+        assert!(!slab.emit_admitted(0, 1_200));
+        assert!(!slab.emit_admitted(0, 1_400));
+        // Exactly at the window edge the market admits again.
+        assert!(slab.emit_admitted(0, 1_500));
+
+        // Re-registration replaces the config but not the runtime gate:
+        // the window opened by the first emission still binds.
+        assert!(!slab.emit_admitted(0, 1_100));
+        slab.register_market(
+            0,
+            MarketConfig {
+                signal_cooldown_ns: 200,
+                ..config
+            },
+        )
+        .unwrap();
+        assert!(!slab.emit_admitted(0, 1_150));
+        assert!(slab.emit_admitted(0, 1_200));
+
+        // Reset clears emission bookkeeping along with everything else.
+        slab.reset();
+        assert!(slab.emit_admitted(0, 1_100));
     }
 }

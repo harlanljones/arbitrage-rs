@@ -4,7 +4,8 @@
 //! resting liquidity, incorporating realistic wire delay, venue matching latency,
 //! and queue front-running degradation.
 
-use arbkit_core::{Allocation, Cents, Leg, OutcomeBook, Prob, Signal, MAX_LEGS, PPM};
+use crate::MAX_SIM_LEGS;
+use arbkit_core::{Allocation, Cents, Leg, OutcomeBook, Prob, Signal, PPM};
 
 use crate::accounting::{ExecutionPnl, SimulationStats};
 use crate::error::{Result, SimError};
@@ -80,7 +81,7 @@ pub struct ExecutionReport {
     /// flag is what distinguishes it from a fill at the originally detected
     /// prices for reporting purposes.
     pub chased: bool,
-    leg_results: [LegFillResult; MAX_LEGS],
+    leg_results: [LegFillResult; MAX_SIM_LEGS],
     leg_count: u8,
     /// Detailed PnL accounting for this execution.
     pub pnl: ExecutionPnl,
@@ -162,6 +163,14 @@ impl Simulator {
         &self.stats
     }
 
+    /// Record a signal that was skipped because the caller's bankroll could
+    /// not reserve the requested stake. Folds into this simulator's stats so
+    /// the disposition funnel (`attempted` vs `capital_short`) stays in one
+    /// place even when the capital gate lives outside the simulator.
+    pub fn record_capital_short(&mut self, requested_stake: Cents) {
+        self.stats.record_capital_short(requested_stake);
+    }
+
     /// Access phantom arbitrage statistics.
     #[inline]
     pub fn phantom_stats(&self) -> &PhantomStats {
@@ -186,7 +195,7 @@ impl Simulator {
         arrival_books: &[OutcomeBook],
     ) -> Result<ExecutionReport> {
         let leg_count = legs.len();
-        if !(2..=MAX_LEGS).contains(&leg_count) {
+        if !(2..=MAX_SIM_LEGS).contains(&leg_count) {
             return Err(SimError::InvalidLegCount(leg_count));
         }
         if arrival_books.len() != leg_count {
@@ -199,7 +208,7 @@ impl Simulator {
         }
 
         let dummy = LegFillResult::unfilled(0, 0, 0, Prob::CERTAIN, UnfilledReason::BookStale, 0);
-        let mut leg_results = [dummy; MAX_LEGS];
+        let mut leg_results = [dummy; MAX_SIM_LEGS];
 
         for (i, leg) in legs.iter().enumerate() {
             let alloc = allocs[i];
@@ -257,7 +266,7 @@ impl Simulator {
         arrival_depths: &[Cents],
     ) -> Result<ExecutionReport> {
         let leg_count = legs.len();
-        if !(2..=MAX_LEGS).contains(&leg_count) {
+        if !(2..=MAX_SIM_LEGS).contains(&leg_count) {
             return Err(SimError::InvalidLegCount(leg_count));
         }
         if arrival_prices.len() != leg_count || arrival_depths.len() != leg_count {
@@ -270,8 +279,8 @@ impl Simulator {
         }
 
         let dummy = LegFillResult::unfilled(0, 0, 0, Prob::CERTAIN, UnfilledReason::BookStale, 0);
-        let mut leg_results = [dummy; MAX_LEGS];
-        let mut arrival_times = [0u64; MAX_LEGS];
+        let mut leg_results = [dummy; MAX_SIM_LEGS];
+        let mut arrival_times = [0u64; MAX_SIM_LEGS];
 
         for (i, leg) in legs.iter().enumerate() {
             let alloc = allocs[i];
@@ -469,7 +478,7 @@ impl Simulator {
         arrival_prices: &[Option<Prob>],
         arrival_depths: &[Cents],
         arrival_times: &[u64],
-    ) -> Option<[LegFillResult; MAX_LEGS]> {
+    ) -> Option<[LegFillResult; MAX_SIM_LEGS]> {
         let leg_count = legs.len();
         let max_chase_bps = u64::from(self.config.chase.max_chase_bps);
 
@@ -489,7 +498,7 @@ impl Simulator {
         }
 
         let dummy = LegFillResult::unfilled(0, 0, 0, Prob::CERTAIN, UnfilledReason::BookStale, 0);
-        let mut results = [dummy; MAX_LEGS];
+        let mut results = [dummy; MAX_SIM_LEGS];
 
         for i in 0..leg_count {
             let leg = &legs[i];

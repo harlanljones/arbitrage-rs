@@ -269,6 +269,7 @@ pub fn write_trades_file(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arbkit_core::arb::MAX_CHUNKS;
     use arbkit_core::{Allocation, Fee, Leg, Prob, Signal};
     use arbkit_sim::LatencyModel;
     use std::collections::HashMap;
@@ -294,28 +295,21 @@ mod tests {
     }
 
     fn sample_signal() -> Signal {
-        let allocations = [
-            Allocation {
-                leg: 0,
-                stake: 48_000,
-                payout: 100_000,
-            },
-            Allocation {
-                leg: 1,
-                stake: 51_000,
-                payout: 100_000,
-            },
-            Allocation {
-                leg: 0,
-                stake: 0,
-                payout: 0,
-            },
-            Allocation {
-                leg: 0,
-                stake: 0,
-                payout: 0,
-            },
-        ];
+        let mut allocations = [Allocation {
+            leg: 0,
+            stake: 0,
+            payout: 0,
+        }; MAX_CHUNKS];
+        allocations[0] = Allocation {
+            leg: 0,
+            stake: 48_000,
+            payout: 100_000,
+        };
+        allocations[1] = Allocation {
+            leg: 1,
+            stake: 51_000,
+            payout: 100_000,
+        };
         Signal::from_raw_parts(allocations, 2, 960_000, 99_000, 1_000, 101)
     }
 

@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 //! Comprehensive integration and unit tests for paper trading, latency modeling,
 //! phantom arbitrage measurement, and PnL accounting.
 

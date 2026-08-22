@@ -95,6 +95,7 @@ pub mod fill;
 pub mod market;
 pub mod price;
 
+#[allow(deprecated)]
 pub use arb::{detect, frictionless_leg, Allocation, Leg, Signal, MAX_LEGS};
 pub use book::{Cents, Level, MarketId, OutcomeBook, OutcomeId, VenueId, MAX_LEVELS};
 pub use error::{ArbError, Result};

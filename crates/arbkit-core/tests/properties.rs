@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 //! Properties that must hold for every price and every set of legs.
 //!
 //! The unit tests pin down specific numbers against published sources. These

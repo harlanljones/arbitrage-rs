@@ -156,12 +156,24 @@ impl Engine {
         }
 
         if let Some(market_id) = event.market_id() {
-            if let Ok(Some(signal)) = Aggregator::evaluate_market(&self.slab, market_id) {
+            // Cooldown gate runs before detection's result is trusted for
+            // emission: a suppressed duplicate must not extend its own
+            // window, so admission is read first and only an emitted
+            // signal opens (or reopens) the market's cooldown.
+            if !self.slab.emit_admitted(market_id, emit_timestamp_ns) {
+                return None;
+            }
+            if let Ok(Some((signal, plan, plan_len))) =
+                Aggregator::evaluate_market(&self.slab, market_id)
+            {
+                self.slab.note_emit(market_id, emit_timestamp_ns);
                 self.stats.signals_emitted += 1;
 
                 return Some(SignalEvent {
                     market_id,
                     signal,
+                    plan,
+                    plan_len,
                     ingest_timestamp_ns,
                     signal_timestamp_ns: emit_timestamp_ns,
                     latency_ns,

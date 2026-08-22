@@ -210,37 +210,26 @@ pub struct Signal {
 impl Signal {
     /// Construct a signal directly from raw parts.
     ///
-    /// Takes `MAX_LEGS` allocations rather than [`MAX_CHUNKS`] because the
-    /// engine's ring-buffer slot is still a one-allocation-per-outcome
-    /// structure. Widening that is a separate change to a separate crate; until
-    /// it happens this constructor is the narrow door, and a signal rebuilt
-    /// through it carries only the first `MAX_LEGS` allocations.
+    /// Takes the full [`MAX_CHUNKS`] width so no allocation is lost on the
+    /// way through the engine's ring-buffer slot, which carries the same
+    /// fixed array. `len` past [`MAX_CHUNKS`] is clamped rather than trusted,
+    /// mirroring how the detector itself bounds every plan it emits.
     #[inline]
     pub const fn from_raw_parts(
-        allocations: [Allocation; MAX_LEGS],
+        allocations: [Allocation; MAX_CHUNKS],
         len: u8,
         overround_ppm: u32,
         total_stake: Cents,
         worst_case_profit: Cents,
         profit_bps: u32,
     ) -> Signal {
-        let mut wide = [Allocation {
-            leg: 0,
-            stake: 0,
-            payout: 0,
-        }; MAX_CHUNKS];
-        let mut i = 0;
-        while i < MAX_LEGS {
-            wide[i] = allocations[i];
-            i += 1;
-        }
-        let len = if len as usize > MAX_LEGS {
-            MAX_LEGS as u8
+        let len = if len as usize > MAX_CHUNKS {
+            MAX_CHUNKS as u8
         } else {
             len
         };
         Signal {
-            allocations: wide,
+            allocations,
             len,
             overround_ppm,
             total_stake,
@@ -601,6 +590,14 @@ pub fn detect_book(legs: &[BookLeg], budget: Cents) -> Result<Option<Signal>> {
 ///
 /// Returns `Ok(None)` whenever there is no profitable trade. Errors are
 /// reserved for malformed input.
+///
+/// The engine migrated to [`detect_book`] in the ROADMAP-PNL B1/B2
+/// workstreams; this adapter remains for tests that document the pessimism
+/// contract and for trivial single-level consumers. New code should carry
+/// depth and call [`detect_book`].
+#[deprecated(
+    note = "single-level adapter over detect_book; carry depth and call detect_book instead"
+)]
 pub fn detect(legs: &[Leg], budget: Cents) -> Result<Option<Signal>> {
     if legs.len() < 2 || legs.len() > MAX_LEGS {
         return Err(ArbError::LegCountOutOfRange(legs.len()));
@@ -887,6 +884,8 @@ pub fn frictionless_leg(venue: VenueId, outcome: OutcomeId, quoted: Prob) -> Leg
 
 #[cfg(test)]
 mod tests {
+    #![allow(deprecated)]
+
     use super::*;
     use crate::fee::kalshi_stake_fee_bps;
 

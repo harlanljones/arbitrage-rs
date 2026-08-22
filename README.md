@@ -179,16 +179,26 @@ cargo run --example pipeline --release -- --ticks 500000 --json report.json
 
 Empirically measured across 2,000,000 sequenced market events. The published baseline was recorded on Apple Silicon; comparison runs were recorded on Linux x86_64 (Intel Core i7-14700K).
 
-| Metric | Apple Silicon baseline (200k) | Linux x86_64 baseline (200k) | Linux i7-14700K (2M ticks) | Target / Budget | Result |
-|---|---:|---:|---:|---|---|
-| **Ingestion Throughput** | `3.53M updates/sec` | `6.35M updates/sec` | `7.72M–12.37M msg/sec` | High-frequency burst | **PASSED** |
-| **Hot Loop Latency (p50)** | `0.200 µs (200 ns)` | `0.090 µs (90 ns)` | `0.050 µs (50 ns)` | Sub-microsecond | **PASSED** |
-| **Hot Loop Latency (p90)** | `0.250 µs (250 ns)` | `0.100 µs (100 ns)` | `0.060 µs (60 ns)` | Sub-microsecond | **PASSED** |
-| **Hot Loop Latency (p99)** | **`0.250 µs (250 ns)`** | **`0.100 µs (100 ns)`** | **`0.080 µs (80 ns)`** | **`< 50.000 µs`** | **>600× Headroom** |
-| **Hot Loop Latency (p99.9)** | `0.500 µs (500 ns)` | `0.480 µs (480 ns)` | `0.120 µs (120 ns)` | Sub-microsecond | **PASSED** |
-| **Simulated Phantom Rate** | `10.01%` (1,001 bps) | `10.01%` (1,001 bps) | `10.01%` (1,001 bps) | Decayed during queue/transit | **Deterministic** |
-| **Paper-Trading Realized PnL** | `+$15,501.73` (+2.12% ROI) | `+$15,501.73` (+2.12% ROI) | `+$15,706.38` (+2.15% ROI) | Net of all fees & rounding | **Net Profitable** |
-| **Workspace Tests** | 114 / 114 passed | 114 / 114 passed | 159 / 159 passed | Full workspace suites | **100% Passed** |
+| Metric | Apple Silicon baseline (200k) | Linux x86_64 baseline (200k) | Linux i7-14700K (2M ticks) | Linux i7-14700K, B1/B2/C1 (2M ticks) | Target / Budget | Result |
+|---|---:|---:|---:|---:|---|---|
+| **Ingestion Throughput** | `3.53M updates/sec` | `6.35M updates/sec` | `7.72M–12.37M msg/sec` | `2.85M updates/sec` | High-frequency burst | **PASSED** |
+| **Hot Loop Latency (p50)** | `0.200 µs (200 ns)` | `0.090 µs (90 ns)` | `0.050 µs (50 ns)` | `0.280 µs (280 ns)` | Sub-microsecond | **PASSED** |
+| **Hot Loop Latency (p90)** | `0.250 µs (250 ns)` | `0.100 µs (100 ns)` | `0.060 µs (60 ns)` | `0.280 µs (280 ns)` | Sub-microsecond | **PASSED** |
+| **Hot Loop Latency (p99)** | **`0.250 µs (250 ns)`** | **`0.100 µs (100 ns)`** | **`0.080 µs (80 ns)`** | **`0.320 µs (320 ns)`** | **`< 50.000 µs`** | **>150× Headroom** |
+| **Hot Loop Latency (p99.9)** | `0.500 µs (500 ns)` | `0.480 µs (480 ns)` | `0.120 µs (120 ns)` | `0.540 µs (540 ns)` | Sub-microsecond | **PASSED** |
+| **Simulated Phantom Rate** | `10.01%` (1,001 bps) | `10.01%` (1,001 bps) | `10.01%` (1,001 bps) | `10.01%` (1,001 bps) | Decayed during queue/transit | **Deterministic** |
+| **Clean Fill Count** | 0 / 829 | 0 / 829 | 0 / 829 | **746 / 829** | Sizing matches fill model | **Fixed in B1** |
+| **Paper-Trading Realized PnL** | `+$15,501.73` (+2.12% ROI) | `+$15,501.73` (+2.12% ROI) | `+$15,706.38` (+2.15% ROI) | **`+$21,491.58` (+2.94% ROI)** | Net of all fees & rounding | **Net Profitable** |
+| **Workspace Tests** | 114 / 114 passed | 114 / 114 passed | 159 / 159 passed | 170 / 170 passed | Full workspace suites | **100% Passed** |
+
+The B1/B2/C1 column reflects the ROADMAP-PNL execution-aware detection
+program: depth-discounted sizing (`venue_survival_bps` matched to each
+venue's modeled queue decay), multi-venue line shopping, chunk-carrying
+signal plans, and the honest disposition funnel. Clean fills went from 0 to
+746 of 829 because signals are now only sized against depth that survives
+transit — the same workload, measured against what will actually fill. The
+hot-loop p99 rose to 320 ns (still >150× inside budget): the aggregator now
+scans every retained book level per event instead of top-of-book only.
 
 For comprehensive charts, methodology, and tables, see [`RESULTS.md`](RESULTS.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md).
 

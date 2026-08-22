@@ -264,4 +264,26 @@ mod tests {
 
         handle.join().unwrap();
     }
+
+    /// The ring byte budget the ROADMAP-PNL B1 workstream committed to
+    /// watching: `Signal` grew to `MAX_CHUNKS` allocations and the signal
+    /// slot carries all of them, so this pins the measured footprint and
+    /// the pipeline's ring totals. If a slot type grows past these bounds,
+    /// reduce `RING_CAPACITY` in `examples/pipeline.rs` and say so here —
+    /// do not let the rings silently eat memory or cache.
+    #[test]
+    fn test_slot_footprint_budget() {
+        use crate::event::{FeedEventSlot, SignalEventSlot};
+
+        // Signal slots are the wide ones: 16 allocations plus a 16-leg plan
+        // descriptor, ~1.1 KiB each after the B1/B2 widening.
+        assert!(std::mem::size_of::<SignalEventSlot>() <= 1280);
+        // Feed slots carry MAX_LEVELS price/size pairs; far narrower.
+        assert!(std::mem::size_of::<FeedEventSlot>() <= 256);
+
+        // The pipeline's 8192-slot rings stay in single-digit MiB territory.
+        const RING_CAPACITY: usize = 8192;
+        let signal_ring_bytes = std::mem::size_of::<SignalEventSlot>() * RING_CAPACITY;
+        assert!(signal_ring_bytes <= 16 * 1024 * 1024);
+    }
 }

@@ -33,6 +33,15 @@ pub mod order;
 pub mod phantom;
 pub mod simulator;
 
+/// The widest execution a simulation accepts, in legs.
+///
+/// `detect_book` plans stake across up to [`MAX_CHUNKS`] `(leg, level)`
+/// chunks, and the pipeline replays every chunk as its own simulated leg.
+/// Capping the simulator at the old four-outcome width would silently
+/// reject — or worse, callers would silently skip — exactly the multi-chunk
+/// plans that depth-aware detection exists to produce.
+pub const MAX_SIM_LEGS: usize = arbkit_core::arb::MAX_CHUNKS;
+
 pub use accounting::{ExecutionPnl, SimulationStats};
 pub use bankroll::{Bankroll, MAX_BANKROLL_VENUES};
 pub use error::{BankrollError, Result, SimError};

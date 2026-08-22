@@ -7,7 +7,7 @@ use thiserror::Error;
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum SimError {
     /// The number of legs in an order or signal is outside the allowed range.
-    #[error("invalid leg count: {0} (must be between 2 and {max})", max = arbkit_core::MAX_LEGS)]
+    #[error("invalid leg count: {0} (must be between 2 and {max})", max = crate::MAX_SIM_LEGS)]
     InvalidLegCount(usize),
 
     /// A leg was requested with non-positive stake.

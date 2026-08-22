@@ -192,3 +192,120 @@ fn test_histogram_resolution_and_quantiles() {
     assert!(hist.p90() >= 890 && hist.p90() <= 910);
     assert!(hist.p99() >= 980 && hist.p99() <= 1000);
 }
+
+/// Detection must size against transit-surviving depth: with the same thin
+/// books, halving every venue's survival rate shrinks the emitted plan, and
+/// the default `10_000` bps reproduces the undiscounted signal exactly.
+#[test]
+fn test_survival_discount_shrinks_sizing_to_transit_surviving_depth() {
+    fn run(survival_bps: u32) -> Option<(i64, i64)> {
+        let mut engine = Engine::new(4);
+        let mut config = MarketConfig {
+            active: true,
+            outcome_count: 2,
+            budget: 1_000_000,
+            ..Default::default()
+        };
+        config.venue_survival_bps[0] = survival_bps;
+        config.venue_survival_bps[1] = survival_bps;
+        engine.register_market(0, config).unwrap();
+
+        // Thin books: depth, not budget, caps the plan.
+        let e1 = FeedEvent::snapshot(0, 0, 0, 1, 1_000, &[make_level(48, 4_000)]);
+        let e2 = FeedEvent::snapshot(1, 0, 1, 1, 2_000, &[make_level(50, 4_000)]);
+        engine.process_event(&e1, 1_500);
+        engine
+            .process_event(&e2, 2_500)
+            .map(|s| (s.signal.total_stake, s.signal.worst_case_profit))
+    }
+
+    let raw = run(10_000).expect("undiscounted market is an arbitrage");
+    let half = run(5_000).expect("discounted market stays an arbitrage");
+
+    assert!(
+        half.0 < raw.0,
+        "discounted stake {} must shrink vs {}",
+        half.0,
+        raw.0
+    );
+    assert!(half.1 <= raw.1);
+}
+
+/// A configured cooldown suppresses duplicate emissions of the same edge
+/// within the window, admits again once it lapses, and stays fully off when
+/// zero — the pre-B1 behavior.
+#[test]
+fn test_signal_cooldown_suppresses_duplicate_emissions() {
+    fn engine_with_cooldown(cooldown_ns: u64) -> Engine {
+        let mut engine = Engine::new(4);
+        let config = MarketConfig {
+            active: true,
+            outcome_count: 2,
+            budget: 100_000,
+            signal_cooldown_ns: cooldown_ns,
+            ..Default::default()
+        };
+        engine.register_market(0, config).unwrap();
+        engine
+    }
+
+    // Both snapshots complete the arbitrage; only the emit clock differs.
+    let mk_events = || {
+        (
+            FeedEvent::snapshot(0, 0, 0, 1, 1_000, &[make_level(48, 50_000)]),
+            FeedEvent::snapshot(1, 0, 1, 2, 2_000, &[make_level(50, 50_000)]),
+        )
+    };
+
+    // Disabled: every detection emits.
+    let mut engine = engine_with_cooldown(0);
+    let (e1, e2) = mk_events();
+    engine.process_event(&e1, 5_000);
+    assert!(engine.process_event(&e2, 6_000).is_some());
+    // Re-quote at the same prices inside what would have been a window still emits.
+    let (e3, e4) = mk_events();
+    engine.process_event(&e3, 7_000);
+    assert!(engine.process_event(&e4, 8_000).is_some());
+
+    // Enabled: second detection within the window is suppressed without a
+    // stats bump, and emission resumes once the window has lapsed. Note
+    // both books stay quoted across rounds, so every snapshot here already
+    // completes a hedgeable market on its own.
+    let mut engine = engine_with_cooldown(10_000);
+    let (e1, e2) = mk_events();
+    engine.process_event(&e1, 5_000);
+    let first = engine.process_event(&e2, 6_000).expect("first emit");
+    assert_eq!(first.signal_timestamp_ns, 6_000);
+
+    let (e3, e4) = mk_events();
+    assert!(
+        engine.process_event(&e3, 7_000).is_none(),
+        "duplicate within window must be suppressed"
+    );
+    assert!(
+        engine.process_event(&e4, 12_000).is_none(),
+        "still inside the window opened at 6000"
+    );
+    assert_eq!(engine.stats().signals_emitted, 1);
+
+    let (e5, e6) = mk_events();
+    let resumed = engine
+        .process_event(&e5, 20_000)
+        .expect("window lapsed: emission resumes");
+    assert_eq!(resumed.signal_timestamp_ns, 20_000);
+    assert!(
+        engine.process_event(&e6, 21_000).is_none(),
+        "new window suppresses again"
+    );
+    assert_eq!(engine.stats().signals_emitted, 2);
+
+    // The suppression boundary is exact: at exactly one full window after
+    // the last emission, admission returns.
+    let mut engine = engine_with_cooldown(10_000);
+    let (e1, e2) = mk_events();
+    engine.process_event(&e1, 5_000);
+    engine.process_event(&e2, 6_000);
+    let (e3, e4) = mk_events();
+    engine.process_event(&e3, 15_000);
+    assert!(engine.process_event(&e4, 16_000).is_some());
+}
