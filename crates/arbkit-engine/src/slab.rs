@@ -225,9 +225,7 @@ impl EngineSlab {
         for config in &mut self.configs {
             *config = MarketConfig::default();
         }
-        for slot in &mut self.last_emit_ns {
-            *slot = 0;
-        }
+        self.last_emit_ns.fill(0);
     }
 }
 
