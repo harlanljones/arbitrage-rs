@@ -5,7 +5,7 @@
     "recordedAt": "2026-08-21",
     "source": "published-snapshot",
     "projectVersion": "0.1.0",
-    "gitCommit": null
+    "gitCommit": "cff8ac6"
   },
   "environment": {
     "label": "Current Linux run",
@@ -23,18 +23,18 @@
     "venues": ["Kalshi", "Polymarket", "Pinnacle"]
   },
   "performance": {
-    "elapsedMs": 31.51,
-    "throughputPerSecond": 6347554,
+    "elapsedMs": 42.806328,
+    "throughputPerSecond": 4672206.408360932,
     "targetP99Ns": 50000,
     "latencyNs": {
-      "count": 829,
-      "min": 92,
-      "mean": 97,
-      "p50": 90,
-      "p90": 100,
-      "p99": 100,
-      "p999": 480,
-      "max": 486
+      "count": 200004,
+      "min": 13,
+      "mean": 60,
+      "p50": 50,
+      "p90": 60,
+      "p99": 70,
+      "p999": 1270,
+      "max": 5468
     }
   },
   "detection": {
@@ -42,9 +42,9 @@
     "signalsEmitted": 829,
     "collectedSignals": 829,
     "sample": {
-      "profitBps": 22,
-      "totalStakeCents": 99940,
-      "guaranteedProfitCents": 227
+      "profitBps": 28,
+      "totalStakeCents": 98310,
+      "guaranteedProfitCents": 280
     }
   },
   "simulation": {
@@ -53,21 +53,21 @@
     "proportionalFills": 746,
     "phantoms": 83,
     "phantomRateBps": 1001,
-    "filledStakeCents": 72876755,
+    "filledStakeCents": 72856290,
     "feesPaidCents": 2605032,
-    "realizedProfitCents": 1550173,
-    "realizedRoiBps": 212
+    "realizedProfitCents": 1570638,
+    "realizedRoiBps": 215
   },
   "verification": {
-    "testsPassed": 114,
+    "testsPassed": 159,
     "testsFailed": 0,
     "clippyWarnings": 0,
     "crates": [
-      { "name": "core", "tests": 37 },
-      { "name": "engine", "tests": 14 },
+      { "name": "core", "tests": 59 },
+      { "name": "engine", "tests": 16 },
       { "name": "feed", "tests": 19 },
       { "name": "match", "tests": 28 },
-      { "name": "sim", "tests": 16 }
+      { "name": "sim", "tests": 37 }
     ]
   }
 }
